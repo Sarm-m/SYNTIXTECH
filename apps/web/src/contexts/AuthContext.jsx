@@ -1,0 +1,406 @@
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useLocalStorage } from '@/hooks/useLocalStorage.js';
+import { authService, ENABLE_LOCAL_AUTH_FALLBACK } from '@/services/api.js';
+import { isValidEmailFormat } from '@/utils/emailValidation.js';
+import AlertHubSingleton from '@/patterns/singleton/AlertHubSingleton.js';
+
+const AuthContext = createContext(null);
+// Mensaje compartido para no duplicar texto cuando backend y fallback local
+// detectan el mismo caso de correo ya registrado.
+const DUPLICATE_EMAIL_MESSAGE = 'Ya existe una cuenta con este correo electrónico.';
+// Quita espacios laterales y garantiza que trabajemos siempre con strings.
+const normalizeText = (value) => String(value ?? '').trim();
+// El correo se normaliza en minúsculas para evitar duplicados por casing.
+const normalizeEmail = (value) => normalizeText(value).toLowerCase();
+
+// La validación previa evita golpear la API con datos que ya sabemos que son inconsistentes.
+const validateRegistrationData = ({ email, password, empresa, telefono }) => {
+  // La empresa es obligatoria porque el sistema está pensado para flotas empresariales.
+  if (!normalizeText(empresa)) return 'Ingresa el nombre de la empresa.';
+  // El teléfono se usa más adelante para recuperación y contacto de la cuenta.
+  if (!normalizeText(telefono)) return 'Ingresa el teléfono.';
+  // El correo debe tener forma válida antes de intentar registro o login federado.
+  if (!isValidEmailFormat(normalizeEmail(email))) return 'Ingresa un correo electrónico válido.';
+  // No permitimos continuar sin contraseña en el registro tradicional.
+  if (!password) return 'Ingresa una contraseña.';
+  // Se exige un mínimo corto pero suficiente para el MVP.
+  if (password.length < 6) return 'La contraseña debe tener al menos 6 caracteres';
+  return null;
+};
+
+export function AuthProvider({ children }) {
+  // `syntix_user` sostiene el perfil mínimo necesario para pintar la UI.
+  const [user, setUser] = useLocalStorage('syntix_user', null);
+  // El token se guarda aparte para desacoplar la sesión del perfil mínimo mostrado en UI.
+  const [token, setToken] = useLocalStorage('syntix_token', null);
+  // Base local de respaldo usada solo en demos o cuando el backend no está disponible.
+  const [usersDb, setUsersDb] = useLocalStorage('syntix_users_db', []);
+  // `loading` permite bloquear botones y evitar dobles envíos.
+  const [loading, setLoading] = useState(false);
+  // `error` centraliza mensajes cuando un consumidor quiera leerlos desde contexto.
+  const [error, setError] = useState(null);
+
+  // Fallback local: permite que el frontend siga operando cuando el backend aún no está disponible.
+  const registerLocal = useCallback((email, password, empresa, telefono) => {
+    if (!ENABLE_LOCAL_AUTH_FALLBACK) {
+      return { success: false, message: 'El modo local solo esta disponible en desarrollo.' };
+    }
+
+    // Se normalizan los campos para que el fallback local se comporte igual que la API real.
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedEmpresa = normalizeText(empresa);
+    const normalizedTelefono = normalizeText(telefono);
+    // Se reutiliza la misma validación previa del flujo remoto.
+    const validationError = validateRegistrationData({
+      email: normalizedEmail,
+      password,
+      empresa: normalizedEmpresa,
+      telefono: normalizedTelefono,
+    });
+
+    if (validationError) {
+      return { success: false, message: validationError };
+    }
+
+    // Se protege el storage local contra registros duplicados por correo.
+    const currentUsers = Array.isArray(usersDb) ? usersDb : [];
+    if (currentUsers.some(u => normalizeEmail(u.email) === normalizedEmail)) {
+      return { success: false, message: DUPLICATE_EMAIL_MESSAGE };
+    }
+
+    // Este objeto simula la persistencia mínima que luego tendría MongoDB.
+    const newUser = {
+      email: normalizedEmail,
+      password,
+      empresa: normalizedEmpresa,
+      telefono: normalizedTelefono,
+      role: 'user',
+    };
+    // La UI nunca necesita la contraseña después del registro exitoso.
+    const userWithoutPass = {
+      email: newUser.email,
+      empresa: newUser.empresa,
+      telefono: newUser.telefono,
+      role: newUser.role,
+    };
+
+    // Se persiste el usuario demo y se inicia sesión local inmediata.
+    setUsersDb([...currentUsers, newUser]);
+    setUser(userWithoutPass);
+    // No hay JWT real en modo local, por eso el token se limpia explícitamente.
+    setToken(null);
+    return { success: true, user: userWithoutPass };
+  }, [usersDb, setUsersDb, setUser, setToken]);
+
+  const loginLocal = useCallback((email, password) => {
+    if (!ENABLE_LOCAL_AUTH_FALLBACK) {
+      return { success: false, message: 'El modo local solo esta disponible en desarrollo.' };
+    }
+
+    // El login demo busca coincidencia exacta sobre el storage local.
+    const normalizedEmail = normalizeEmail(email);
+    const currentUsers = Array.isArray(usersDb) ? usersDb : [];
+    const foundUser = currentUsers.find(u => normalizeEmail(u.email) === normalizedEmail && u.password === password);
+
+    if (foundUser) {
+      // Igual que en producción, jamás se conserva la contraseña en el estado del cliente.
+      const { password: _, ...userWithoutPass } = foundUser;
+      setUser(userWithoutPass);
+      setToken(null);
+      return { success: true };
+    }
+
+    // Credencial administrativa fija para demostraciones rápidas del sistema.
+    if (normalizedEmail === 'admin@syntix.tech' && password === 'admin123') {
+      setUser({ email: normalizedEmail, empresa: 'SYNTIX Demo', telefono: '3000000000', role: 'admin' });
+      setToken(null);
+      return { success: true };
+    }
+
+    return { success: false, message: 'Credenciales inválidas' };
+  }, [usersDb, setUser, setToken]);
+
+  // Flujo principal: intenta backend y solo vuelve al almacenamiento local si la integración falla.
+  const register = useCallback(async (email, password, empresa, telefono) => {
+    // Se normaliza antes de salir del frontend para mantener consistencia con backend.
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedEmpresa = normalizeText(empresa);
+    const normalizedTelefono = normalizeText(telefono);
+    const validationError = validateRegistrationData({
+      email: normalizedEmail,
+      password,
+      empresa: normalizedEmpresa,
+      telefono: normalizedTelefono,
+    });
+
+    if (validationError) {
+      return { success: false, message: validationError };
+    }
+
+    // Se activa loading solo cuando ya sabemos que el formulario está correcto.
+    setLoading(true);
+    setError(null);
+
+    try {
+      // El backend es la única fuente válida para registro con verificación por correo.
+      const apiResult = await authService.register({
+        email: normalizedEmail,
+        password,
+        empresa: normalizedEmpresa,
+        telefono: normalizedTelefono,
+      });
+
+      if (apiResult.useLocalStorage) {
+        // El registro no cae a localStorage porque saltaría el OTP y rompería la seguridad del flujo.
+        return {
+          success: false,
+          message:
+            apiResult.message ||
+            'El backend no esta disponible para completar el registro con verificacion por correo.',
+        };
+      }
+
+      if (apiResult.success) {
+        // El modal de registro usa `needsVerification` para pasar al paso OTP.
+        return {
+          success: true,
+          needsVerification: true,
+          email: apiResult.data?.email || normalizedEmail,
+          message: apiResult.data?.message || apiResult.message || 'Registro exitoso. Revisa tu correo para verificar tu cuenta.',
+        };
+      }
+
+      return { success: false, message: apiResult.message || 'Error al registrar usuario' };
+    } catch (err) {
+      // Un fallo inesperado no debe crear cuentas locales ni dejar al usuario sin explicación.
+      console.warn('Error en API durante registro:', err);
+      return {
+        success: false,
+        message: 'No se pudo completar el registro. Verifica que el backend y la base de datos esten disponibles.',
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const login = useCallback(async (email, password) => {
+    // En login también se normaliza el correo para evitar fallos por mayúsculas.
+    const normalizedEmail = normalizeEmail(email);
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Primero se intenta el backend porque ahí vive la sesión real con JWT.
+      const apiResult = await authService.login(normalizedEmail, password);
+
+      if (apiResult.useLocalStorage) {
+        // Solo el login puede degradar a localStorage sin romper el modelo de verificación.
+        return loginLocal(normalizedEmail, password);
+      }
+
+      if (apiResult.success) {
+        // Si el backend valida, guardamos usuario y token como sesión principal.
+        setUser(apiResult.data.user);
+        setToken(apiResult.data.token);
+        return { success: true };
+      }
+
+      // Los errores funcionales del backend no caen a modo local para no saltar verificaciones.
+      return { success: false, message: apiResult.message };
+    } catch (err) {
+      console.warn('Error inesperado en API durante login:', err);
+      if (ENABLE_LOCAL_AUTH_FALLBACK) {
+        return loginLocal(normalizedEmail, password);
+      }
+      return {
+        success: false,
+        message: 'No se pudo iniciar sesion. Verifica que el backend este disponible.',
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [loginLocal, setUser, setToken]);
+
+  const loginWithGoogle = useCallback(async ({ idToken, empresa = '', telefono = '' }) => {
+    // Google login comparte el mismo control de loading que login/register.
+    setLoading(true);
+    setError(null);
+
+    try {
+      // El backend valida el token de Google y decide si crea o reutiliza la cuenta.
+      const apiResult = await authService.googleAuth({
+        idToken,
+        empresa: normalizeText(empresa),
+        telefono: normalizeText(telefono),
+      });
+
+      if (apiResult.success) {
+        // La sesión federada termina igual que una sesión normal: usuario + JWT.
+        setUser(apiResult.data.user);
+        setToken(apiResult.data.token);
+        return {
+          success: true,
+          created: Boolean(apiResult.data.created),
+          user: apiResult.data.user,
+          message: apiResult.message,
+        };
+      }
+
+      if (apiResult.useLocalStorage) {
+        // Google nunca cae a modo local porque requiere validación real del idToken.
+        return {
+          success: false,
+          message: 'La autenticacion con Google requiere que el backend este disponible.',
+        };
+      }
+
+      return { success: false, message: apiResult.message || 'No se pudo autenticar con Google' };
+    } catch (err) {
+      console.error('Error inesperado en autenticacion con Google.', err);
+      return { success: false, message: 'Error inesperado al autenticar con Google.' };
+    } finally {
+      setLoading(false);
+    }
+  }, [setUser, setToken]);
+
+  const loginAfterVerification = useCallback((verifiedUser, verifiedToken = null) => {
+    // El modal OTP usa esta función para materializar la sesión después de verificar el código.
+    if (!verifiedUser) return { success: false };
+    setUser(verifiedUser);
+    setToken(verifiedToken);
+    setError(null);
+    return { success: true };
+  }, [setUser, setToken]);
+
+  const applySession = useCallback((nextUser, nextToken = null) => {
+    if (!nextUser) return { success: false };
+    setUser(nextUser);
+    if (nextToken) {
+      setToken(nextToken);
+    }
+    setError(null);
+    return { success: true };
+  }, [setUser, setToken]);
+
+  const updateProfile = useCallback(async ({ nombre, empresa, telefono }) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const apiResult = await authService.updateUser({ nombre, empresa, telefono });
+
+      if (apiResult.success && apiResult.data?.user) {
+        setUser(apiResult.data.user);
+        return { success: true, message: apiResult.message };
+      }
+
+      const message = apiResult.message || 'Error al actualizar el perfil';
+      setError(message);
+      return { success: false, message };
+    } catch (err) {
+      const message = 'No se pudo actualizar el perfil. Intenta nuevamente.';
+      setError(message);
+      return { success: false, message };
+    } finally {
+      setLoading(false);
+    }
+  }, [setUser]);
+
+  const requestEmailChange = useCallback(async (newEmail, currentPassword) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const apiResult = await authService.requestEmailChange(newEmail, currentPassword);
+
+      if (apiResult.success) {
+        return { success: true, message: apiResult.message, data: apiResult.data };
+      }
+
+      const message = apiResult.message || 'No se pudo solicitar el cambio de correo';
+      setError(message);
+      return { success: false, message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const verifyEmailChange = useCallback(async (newEmail, code) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const apiResult = await authService.verifyEmailChange(newEmail, code);
+
+      if (apiResult.success && apiResult.data?.user) {
+        applySession(apiResult.data.user, apiResult.data.token || null);
+        return { success: true, message: apiResult.message };
+      }
+
+      const message = apiResult.message || 'No se pudo verificar el codigo';
+      setError(message);
+      return { success: false, message };
+    } finally {
+      setLoading(false);
+    }
+  }, [applySession]);
+
+  const logout = useCallback(() => {
+    // Cerrar sesión limpia singleton de alertas, perfil, JWT y errores residuales.
+    AlertHubSingleton.getInstance().reset();
+    setUser(null);
+    setToken(null);
+    setError(null);
+  }, [setUser, setToken]);
+
+  useEffect(() => {
+    if (!token) return undefined;
+
+    let isActive = true;
+
+    const hydrateUser = async () => {
+      const apiResult = await authService.getMe();
+
+      if (!isActive) return;
+
+      if (apiResult.success && apiResult.data?.user) {
+        setUser(apiResult.data.user);
+        return;
+      }
+
+      AlertHubSingleton.getInstance().reset();
+      setUser(null);
+      setToken(null);
+      setError(apiResult.message || 'No fue posible refrescar la sesion.');
+    };
+
+    hydrateUser();
+
+    return () => {
+      isActive = false;
+    };
+  }, [token, setUser, setToken]);
+
+  // Se expone helper para que formularios descarten errores previos al cambiar de modo.
+  const clearError = useCallback(() => setError(null), []);
+
+  const isLocalSession = Boolean(user && !token && ENABLE_LOCAL_AUTH_FALLBACK);
+  const isAuthenticated = Boolean(user && (token || isLocalSession));
+
+  return (
+    <AuthContext.Provider value={{
+      user, token, login, loginWithGoogle, register, loginAfterVerification, applySession,
+      updateProfile, requestEmailChange, verifyEmailChange, logout,
+      isAuthenticated, isLocalAuthFallbackEnabled: ENABLE_LOCAL_AUTH_FALLBACK, loading, error, clearError
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export const useAuth = () => useContext(AuthContext);
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};

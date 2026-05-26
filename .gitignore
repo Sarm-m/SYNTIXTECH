@@ -1,0 +1,58 @@
+# dependencies
+node_modules/
+apps/**/node_modules/
+
+# local secrets
+.env
+.env.*
+!.env.example
+apps/**/.env
+apps/**/.env.*
+!apps/**/.env.example
+!apps/**/.env.local.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# builds
+dist/
+apps/**/dist/
+coverage/
+apps/**/coverage/
+
+# vite cache
+.vite/
+.vite-temp/
+apps/**/.vite/
+apps/**/.vite-temp/
+
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# LaTeX build artifacts
+*.aux
+*.lof
+*.lot
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+*.bbl
+*.blg
+*.run.xml
+*.bcf
+*.xdv

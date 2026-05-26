@@ -1,0 +1,80 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - feature-*
+      - feature/**
+
+  pull_request:
+    branches:
+      - develop
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Run lint
+        working-directory: apps/web
+        run: npm run lint
+
+      - name: Audit frontend dependencies
+        working-directory: apps/web
+        run: npm audit --audit-level=moderate
+
+      - name: Run unit tests with coverage
+        working-directory: apps/web
+        run: npm test
+
+      - name: Generate own quality metrics evidence
+        working-directory: apps/web
+        run: npm run quality:metrics
+
+      - name: Validate production build
+        working-directory: apps/web
+        run: npm run build
+
+      - name: Upload quality evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-quality-evidence
+          path: |
+            apps/web/coverage/lcov.info
+            apps/web/coverage/quality-metrics-report.json
+          retention-days: 14
+
+      - name: Run SonarCloud analysis
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
