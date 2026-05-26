@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "exportedAt": "2026-05-22T00:00:00.000Z",
+  "vehiculos": [
+    { "placa": "DCV101", "marca": "Chevrolet", "modelo": "NHR", "anio": 2021, "tipo": "Camioneta reparto", "conductorDocumento": "1000000001" },
+    { "placa": "DCV102", "marca": "Toyota", "modelo": "Hilux", "anio": 2023, "tipo": "Pickup", "conductorDocumento": "1000000002" },
+    { "placa": "DCV103", "marca": "Hino", "modelo": "Dutro", "anio": 2020, "tipo": "Camion liviano", "conductorDocumento": "1000000003" },
+    { "placa": "DCV104", "marca": "Ford", "modelo": "Transit", "anio": 2024, "tipo": "Van soporte", "conductorDocumento": "1000000004" },
+    { "placa": "DCV105", "marca": "Isuzu", "modelo": "NPR", "anio": 2022, "tipo": "Camion mediano", "conductorDocumento": "1000000005" },
+    { "placa": "DCV106", "marca": "Foton", "modelo": "Aumark", "anio": 2021, "tipo": "Carga seca", "conductorDocumento": "1000000006" },
+    { "placa": "DCV107", "marca": "Nissan", "modelo": "Frontier", "anio": 2022, "tipo": "Pickup operativa", "conductorDocumento": "1000000007" },
+    { "placa": "DCV108", "marca": "JAC", "modelo": "HFC", "anio": 2018, "tipo": "Camion logistico", "conductorDocumento": "1000000008" },
+    { "placa": "DCV109", "marca": "Mercedes-Benz", "modelo": "Sprinter", "anio": 2020, "tipo": "Van empresarial", "conductorDocumento": "1000000009" },
+    { "placa": "DCV110", "marca": "Volkswagen", "modelo": "Delivery", "anio": 2019, "tipo": "Camion urbano", "conductorDocumento": null }
+  ],
+  "conductores": [
+    { "nombre": "Laura Mendez Rojas", "documento": "1000000001", "telefono": "3001112233", "categoria": "C2", "fechaVencimiento": "2025-12-15" },
+    { "nombre": "Carlos Rincon Vega", "documento": "1000000002", "telefono": "3001112234", "categoria": "C1", "fechaVencimiento": "2026-03-02" },
+    { "nombre": "Mariana Torres Gil", "documento": "1000000003", "telefono": "3001112235", "categoria": "C2", "fechaVencimiento": "2026-05-10" },
+    { "nombre": "Andres Salazar Pena", "documento": "1000000004", "telefono": "3001112236", "categoria": "B1", "fechaVencimiento": "2026-05-22" },
+    { "nombre": "Nicolas Gomez Ruiz", "documento": "1000000005", "telefono": "3001112237", "categoria": "C3", "fechaVencimiento": "2026-05-28" },
+    { "nombre": "Paula Cardenas Leon", "documento": "1000000006", "telefono": "3001112238", "categoria": "C2", "fechaVencimiento": "2026-06-01" },
+    { "nombre": "Felipe Duarte Mora", "documento": "1000000007", "telefono": "3001112239", "categoria": "B1", "fechaVencimiento": "2026-06-10" },
+    { "nombre": "Daniela Vargas Solano", "documento": "1000000008", "telefono": "3001112240", "categoria": "C1", "fechaVencimiento": "2026-12-31" },
+    { "nombre": "Santiago Mejia Castro", "documento": "1000000009", "telefono": "3001112241", "categoria": "C2", "fechaVencimiento": "2027-03-15" },
+    { "nombre": "Valeria Pardo Nieto", "documento": "1000000010", "telefono": "3001112242", "categoria": "B1", "fechaVencimiento": "2028-01-20" }
+  ],
+  "soats": [
+    { "placaVehiculo": "DCV101", "numeroPoliza": "SOAT-DCV101-2026", "aseguradora": "SURA", "fechaExpedicion": "2024-12-15", "fechaInicioVigencia": "2024-12-15", "fechaFinVigencia": "2025-12-15", "observaciones": "" },
+    { "placaVehiculo": "DCV102", "numeroPoliza": "SOAT-DCV102-2026", "aseguradora": "Bolivar", "fechaExpedicion": "2025-03-02", "fechaInicioVigencia": "2025-03-02", "fechaFinVigencia": "2026-03-02", "observaciones": "" },
+    { "placaVehiculo": "DCV103", "numeroPoliza": "SOAT-DCV103-2026", "aseguradora": "Mapfre", "fechaExpedicion": "2025-05-10", "fechaInicioVigencia": "2025-05-10", "fechaFinVigencia": "2026-05-10", "observaciones": "" },
+    { "placaVehiculo": "DCV104", "numeroPoliza": "SOAT-DCV104-2026", "aseguradora": "AXA Colpatria", "fechaExpedicion": "2025-05-22", "fechaInicioVigencia": "2025-05-22", "fechaFinVigencia": "2026-05-22", "observaciones": "" },
+    { "placaVehiculo": "DCV105", "numeroPoliza": "SOAT-DCV105-2026", "aseguradora": "SURA", "fechaExpedicion": "2025-05-28", "fechaInicioVigencia": "2025-05-28", "fechaFinVigencia": "2026-05-28", "observaciones": "" },
+    { "placaVehiculo": "DCV106", "numeroPoliza": "SOAT-DCV106-2026", "aseguradora": "Bolivar", "fechaExpedicion": "2025-06-01", "fechaInicioVigencia": "2025-06-01", "fechaFinVigencia": "2026-06-01", "observaciones": "" },
+    { "placaVehiculo": "DCV107", "numeroPoliza": "SOAT-DCV107-2026", "aseguradora": "Mapfre", "fechaExpedicion": "2025-06-10", "fechaInicioVigencia": "2025-06-10", "fechaFinVigencia": "2026-06-10", "observaciones": "" },
+    { "placaVehiculo": "DCV108", "numeroPoliza": "SOAT-DCV108-2026", "aseguradora": "SURA", "fechaExpedicion": "2025-12-31", "fechaInicioVigencia": "2025-12-31", "fechaFinVigencia": "2026-12-31", "observaciones": "" },
+    { "placaVehiculo": "DCV109", "numeroPoliza": "SOAT-DCV109-2026", "aseguradora": "Bolivar", "fechaExpedicion": "2026-03-15", "fechaInicioVigencia": "2026-03-15", "fechaFinVigencia": "2027-03-15", "observaciones": "" },
+    { "placaVehiculo": "DCV110", "numeroPoliza": "SOAT-DCV110-2026", "aseguradora": "AXA Colpatria", "fechaExpedicion": "2027-01-20", "fechaInicioVigencia": "2027-01-20", "fechaFinVigencia": "2028-01-20", "observaciones": "" }
+  ],
+  "rtms": [
+    { "placaVehiculo": "DCV101", "numeroCertificado": "RTM-DCV101", "cda": "CDA Norte", "nitCda": "", "fechaExpedicion": "2024-12-15", "fechaVencimiento": "2025-12-15", "resultado": "Aprobado", "observaciones": "" },
+    { "placaVehiculo": "DCV102", "numeroCertificado": "RTM-DCV102", "cda": "CDA Sur", "nitCda": "", "fechaExpedicion": "2025-03-02", "fechaVencimiento": "2026-03-02", "resultado": "Aprobado", "observaciones": "" },
+    { "placaVehiculo": "DCV103", "numeroCertificado": "RTM-DCV103", "cda": "CDA Centro", "nitCda": "", "fechaExpedicion": "2025-05-10", "fechaVencimiento": "2026-05-10", "resultado": "Aprobado", "observaciones": "" },
+    { "placaVehiculo": "DCV104", "numeroCertificado": "RTM-DCV104", "cda": "CDA Norte", "nitCda": "", "fechaExpedicion": "2025-05-22", "fechaVencimiento": "2026-05-22", "resultado": "Aprobado", "observaciones": "" },
+    { "placaVehiculo": "DCV105", "numeroCertificado": "RTM-DCV105", "cda": "CDA Sur", "nitCda": "", "fechaExpedicion": "2025-05-28", "fechaVencimiento": "2026-05-28", "resultado": "Aprobado", "observaciones": "" },
+    { "placaVehiculo": "DCV106", "numeroCertificado": "RTM-DCV106", "cda": "CDA Centro", "nitCda": "", "fechaExpedicion": "2025-06-01", "fechaVencimiento": "2026-06-01", "resultado": "Aprobado", "observaciones": "" },
+    { "placaVehiculo": "DCV107", "numeroCertificado": "RTM-DCV107", "cda": "CDA Norte", "nitCda": "", "fechaExpedicion": "2025-06-10", "fechaVencimiento": "2026-06-10", "resultado": "Aprobado", "observaciones": "" },
+    { "placaVehiculo": "DCV108", "numeroCertificado": "RTM-DCV108", "cda": "CDA Sur", "nitCda": "", "fechaExpedicion": "2025-12-31", "fechaVencimiento": "2026-12-31", "resultado": "Aprobado", "observaciones": "" },
+    { "placaVehiculo": "DCV109", "numeroCertificado": "RTM-DCV109", "cda": "CDA Centro", "nitCda": "", "fechaExpedicion": "2026-03-15", "fechaVencimiento": "2027-03-15", "resultado": "Aprobado", "observaciones": "" },
+    { "placaVehiculo": "DCV110", "numeroCertificado": "RTM-DCV110", "cda": "CDA Norte", "nitCda": "", "fechaExpedicion": "2027-01-20", "fechaVencimiento": "2028-01-20", "resultado": "Aprobado", "observaciones": "" }
+  ],
+  "validaciones": [],
+  "preferences": {
+    "syntix_threshold": "15",
+    "syntix_simulated_date": "2026-05-22",
+    "syntix_dark_mode": "true"
+  },
+  "notes": "Las alertas no se exportan: se calculan automaticamente a partir de vencimientos."
+}

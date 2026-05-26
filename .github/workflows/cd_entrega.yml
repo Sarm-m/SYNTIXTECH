@@ -1,0 +1,54 @@
+name: CD - Generación de Artefacto y Entrega Continua
+on:
+  push:
+    # Solo se empaqueta al integrar en ramas de consolidación del proyecto.
+    branches: [ "main", "develop" ] 
+
+jobs:
+  entrega:
+    name: Empaquetado y Generación de Entregable
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # El build real del frontend vive en apps/web, así que todos los pasos se ejecutan allí.
+        working-directory: apps/web
+
+    steps:
+      - name: Descargar código fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js (v20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Instalar dependencias limpias
+        run: npm ci
+
+      - name: Construir aplicación de producción (Build)
+        run: npm run build
+
+      - name: Confirmación de la entrega
+        run: |
+          echo "El software ha sido empaquetado exitosamente"
+         
+
+      - name: Guardar Artefacto (Entregable Final)
+        uses: actions/upload-artifact@v4
+        with:
+          name: DriveControl-Build-Produccion
+          # El artefacto resultante se publica para revisión o descarga manual posterior.
+          path: dist/apps/web
+          retention-days: 7
+
+  notify:
+    needs: [entrega]
+    if: always()
+    uses: ./.github/workflows/notify_discord.yml
+    with:
+      status: ${{ needs.entrega.result }}
+      workflow_name: "CD - Generación de Artefacto y Entrega Continua"
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
