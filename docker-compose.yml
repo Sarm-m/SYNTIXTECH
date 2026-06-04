@@ -22,8 +22,6 @@ services:
       dockerfile: Dockerfile
     container_name: drivectrl-backend
     restart: unless-stopped
-    env_file:
-      - apps/web/.env
     environment:
       PORT: 5000
       JWT_SECRET: ${JWT_SECRET:-local-compose-jwt-secret}

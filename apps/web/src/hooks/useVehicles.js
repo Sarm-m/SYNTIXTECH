@@ -40,9 +40,7 @@ export function useVehicles() {
 
     setIsLoading(true);
     try {
-      const res = await api.get('/vehiculos', {
-        params: { email: user.email },
-      });
+      const res = await api.get('/vehiculos');
 
       setVehiculos(res.data.map(normalizeVehicle));
     } catch (err) {

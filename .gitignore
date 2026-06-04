@@ -13,6 +13,7 @@ apps/**/.env.*
 backend/.env
 backend/.env.*
 !backend/.env.example
+ANEXO_CREDENCIALES_PRIVADO.md
 
 # builds
 dist/

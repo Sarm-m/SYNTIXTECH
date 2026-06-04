@@ -42,7 +42,7 @@ export function RtmProvider({ children }) {
     }
     setLoading(true);
     try {
-      const res = await api.get('/rtms', { params: { email: user.email } });
+      const res = await api.get('/rtms');
       setStoredRtms(res.data.map(normalizeRtm));
     } catch (err) {
       console.error('Error cargando RTMs:', err);

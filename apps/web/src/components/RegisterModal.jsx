@@ -370,8 +370,8 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="max-h-[calc(100vh-1.5rem)] w-full max-w-md overflow-y-auto rounded-xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 sm:max-h-[calc(100vh-2rem)]">
 
         {step === 'register' && (
           <>
@@ -379,7 +379,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
               <h2 className="text-2xl font-bold text-syntix-navy">Crear Cuenta</h2>
               <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-6 h-6" /></button>
             </div>
-            <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 p-4 sm:p-6">
               {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
               {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
               <div>
@@ -462,7 +462,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
               </div>
               <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-6 h-6" /></button>
             </div>
-            <div className="p-6 space-y-5">
+            <div className="space-y-5 p-4 sm:p-6">
               {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
               {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
 
@@ -470,7 +470,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                 ¿Por donde quieres recibir tu codigo de verificacion?
               </p>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {/* Opcion correo electronico */}
                 <button
                   type="button"
@@ -487,7 +487,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                   </div>
                   <div className="text-center">
                     <p className="font-semibold text-sm text-gray-800 group-hover:text-syntix-green transition-colors">Correo</p>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[100px]">{pendingEmail}</p>
+                    <p className="mt-0.5 max-w-full break-all text-xs text-gray-500 sm:max-w-[100px] sm:truncate">{pendingEmail}</p>
                   </div>
                 </button>
 
@@ -528,7 +528,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
               </div>
               <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-6 h-6" /></button>
             </div>
-            <form onSubmit={handleVerify} className="p-6 space-y-6">
+            <form onSubmit={handleVerify} className="space-y-6 p-4 sm:p-6">
               <div className="text-center">
                 {otpChannel === 'sms' ? (
                   <>
@@ -562,7 +562,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                     onChange={e => handleOtpChange(index, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(index, e)}
                     onPaste={handleOtpPaste}
-                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-syntix-navy"
+                    className="h-12 w-10 rounded-lg border-2 border-gray-300 text-center text-xl font-bold text-syntix-navy outline-none focus:border-syntix-green focus:ring-2 focus:ring-syntix-green sm:h-14 sm:w-12 sm:text-2xl"
                   />
                 ))}
               </div>
