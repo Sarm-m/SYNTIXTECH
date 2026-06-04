@@ -7,7 +7,8 @@
     "test": "npm --prefix backend test && npm --prefix apps/web test",
     "lint": "npm --prefix apps/web run lint",
     "backend:test": "npm --prefix backend test",
-    "frontend:test": "npm --prefix apps/web test"
+    "frontend:test": "npm --prefix apps/web test",
+    "secrets:check": "node scripts/check-secrets.js"
   },
   "dependencies": {
     "axios": "^1.15.0"

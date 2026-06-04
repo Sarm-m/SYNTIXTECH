@@ -272,8 +272,8 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="max-h-[calc(100vh-1.5rem)] w-full max-w-md overflow-y-auto rounded-xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 sm:max-h-[calc(100vh-2rem)]">
         <div className="flex justify-between items-center p-6 border-b border-gray-100">
           <div className="flex items-center gap-2">
             {mode !== 'login' && (
@@ -295,7 +295,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         </div>
 
         {mode === 'login' && (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:p-6">
             {/* Error de negocio o validación del backend/local fallback. */}
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             {/* Aviso positivo como recuperación completada o código enviado. */}
@@ -370,7 +370,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         )}
 
         {mode === 'recover' && (
-          <form onSubmit={handleRecoverSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleRecoverSubmit} className="space-y-4 p-4 sm:p-6">
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
             <div>
@@ -391,7 +391,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         )}
 
         {mode === 'chooseChannel' && (
-          <div className="p-6 space-y-5">
+          <div className="space-y-5 p-4 sm:p-6">
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
 
@@ -399,7 +399,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
               ¿Por donde quieres recibir tu codigo de verificacion?
             </p>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {/* Opcion correo electronico */}
               <button
                 type="button"
@@ -448,7 +448,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         )}
 
         {mode === 'googleComplete' && (
-          <form onSubmit={handleGoogleComplete} className="p-6 space-y-4">
+          <form onSubmit={handleGoogleComplete} className="space-y-4 p-4 sm:p-6">
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             <p className="text-sm text-gray-600">
               Para crear tu cuenta con Google necesitamos estos datos adicionales.
@@ -491,7 +491,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         )}
 
         {mode === 'reset' && (
-          <form onSubmit={handleResetSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleResetSubmit} className="space-y-4 p-4 sm:p-6">
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
 

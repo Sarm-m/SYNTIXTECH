@@ -1,4 +1,4 @@
-WEB_ENV_FILE ?= apps/web/.env
+WEB_ENV_FILE ?= .env
 COMPOSE_ENV_ARGS := $(if $(wildcard $(WEB_ENV_FILE)),--env-file $(WEB_ENV_FILE),)
 COMPOSE := docker compose $(COMPOSE_ENV_ARGS)
 PROJECT_CONTAINERS := drivectrl-mongodb drivectrl-backend drivectrl-frontend

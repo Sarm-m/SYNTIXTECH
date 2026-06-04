@@ -8,7 +8,7 @@ Esta carpeta contiene el informe final academico en LaTeX y el paquete visual de
 - `img/`
 - `anexos/`
 
-No modificar, borrar, des-trackear ni reemplazar `apps/web/.env`. Se conserva por decision academica para que el profesor pueda ejecutar `make build` y `make up` sin configurar credenciales manualmente. En el informe y en los README solo se mencionan nombres de variables, nunca valores reales.
+Nota historica: esta carpeta conserva evidencias academicas de la entrega original. En el fork personal, los archivos reales `.env` y `ANEXO_CREDENCIALES_PRIVADO.md` no deben versionarse; usa solo archivos `.env.example` con placeholders y configura secretos desde el entorno local o GitHub Actions.
 
 ## Archivo principal para Overleaf
 
@@ -159,8 +159,8 @@ Validaciones de documentacion:
 
 ```bash
 git diff --check
-git status --short apps/web/.env
-git ls-files --stage apps/web/.env
+git status --short
+git ls-files | grep -E '(^|/)\.env(\..*)?$|ANEXO_CREDENCIALES_PRIVADO.md'
 git status --short docs/Agile
 ```
 

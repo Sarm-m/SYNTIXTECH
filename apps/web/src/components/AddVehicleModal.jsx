@@ -154,10 +154,10 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
       <div
         data-onboarding="vehicle-form"
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200"
+        className="max-h-[calc(100vh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 sm:max-h-[calc(100vh-2rem)]"
       >
         <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
           <h2 className="text-xl font-bold text-syntix-navy flex items-center gap-2">
@@ -172,7 +172,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4 p-4 sm:p-6">
           {error && (
             <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">
               {error}
@@ -195,7 +195,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
             />
           </div>
 
-          <div data-onboarding="vehicle-brand-model-fields" className="grid grid-cols-2 gap-4">
+          <div data-onboarding="vehicle-brand-model-fields" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="vehicle-brand" className="block text-sm font-bold text-gray-700 mb-1">Marca</label>
               <input
@@ -222,7 +222,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
             </div>
           </div>
 
-          <div data-onboarding="vehicle-year-type-fields" className="grid grid-cols-2 gap-4">
+          <div data-onboarding="vehicle-year-type-fields" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="vehicle-year" className="block text-sm font-bold text-gray-700 mb-1">Anio</label>
               <input
@@ -256,17 +256,17 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
             </div>
           </div>
 
-          <div data-onboarding="vehicle-submit-actions" className="pt-4 flex justify-end gap-3">
+          <div data-onboarding="vehicle-submit-actions" className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+              className="min-h-10 rounded-lg px-4 py-2 font-medium text-gray-600 transition-colors hover:bg-gray-100"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="bg-syntix-navy text-white px-6 py-2 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2"
+              className="flex min-h-10 items-center justify-center gap-2 rounded-lg bg-syntix-navy px-6 py-2 font-medium text-white transition-colors hover:bg-syntix-navy/90"
             >
               <Save className="w-4 h-4" /> {submitLabel}
             </button>

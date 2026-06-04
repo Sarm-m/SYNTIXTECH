@@ -42,9 +42,7 @@ export function useConductors() {
 
     setIsLoading(true);
     try {
-      const res = await api.get('/conductores', {
-        params: { email: user.email },
-      });
+      const res = await api.get('/conductores');
 
       setConductores(res.data.map(normalizeConductor));
     } catch (err) {

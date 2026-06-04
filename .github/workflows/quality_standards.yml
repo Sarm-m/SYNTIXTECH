@@ -1,4 +1,4 @@
-name: "Kanban 2 - Estándares de Calidad"
+name: "Kanban 2 - Quality Standards"
 on:
   issues:
     # Comenta automáticamente las nuevas tareas para recordar criterios de calidad del curso.

@@ -120,7 +120,84 @@ export default function ConductoresPage() {
           </div>
         </div>
 
-        <div data-onboarding="conductors-table" className="overflow-x-auto">
+        <div data-onboarding="conductors-table" className="md:hidden p-4 space-y-3">
+          {filtered.map((c) => {
+            const assignedVehicleLabel = getAssignedVehicleLabel(c, vehiculos);
+            const expirationText = getExpirationAlertText(c.diasRestantes, c.fechaVencimiento);
+            const statusReason = getDocumentStatusReason({
+              documentLabel: 'Licencia',
+              daysRemaining: c.diasRestantes,
+              status: c.estado,
+            });
+
+            return (
+              <article
+                key={c.id}
+                className={`rounded-xl border p-4 shadow-sm ${isDarkMode ? 'border-slate-800 bg-slate-950/50' : 'border-gray-100 bg-white'}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                    isDarkMode ? 'bg-slate-800 text-slate-100' : 'bg-syntix-navy/5 text-syntix-navy'
+                  }`}>
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`break-words font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>{c.nombre}</p>
+                    <p className="break-words text-sm">{c.documento}</p>
+                  </div>
+                  <StatusBadge status={c.estado} />
+                </div>
+
+                <dl className={`mt-4 grid grid-cols-1 gap-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Contacto</dt>
+                    <dd className="break-words">{c.telefono}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Licencia</dt>
+                    <dd className="break-words">Cat: {c.categoria} · {formatColombianDate(c.fechaVencimiento)}</dd>
+                    <dd className="text-xs opacity-80">{expirationText.primaryText}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Estado</dt>
+                    <dd className="break-words text-xs font-semibold">{statusReason}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Vehiculo asignado</dt>
+                    <dd className="break-words">{assignedVehicleLabel}</dd>
+                  </div>
+                </dl>
+
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(c)}
+                    className={`inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                      isDarkMode
+                        ? 'bg-syntix-green/10 text-syntix-green hover:bg-syntix-green/20'
+                        : 'bg-syntix-navy/5 text-syntix-navy hover:bg-syntix-navy/10'
+                    }`}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteConductor(c.id)}
+                    className={`inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                      isDarkMode
+                        ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                        : 'bg-red-50 text-syntix-red hover:bg-red-100'
+                    }`}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className={`w-full text-left text-sm ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
             <thead className={`border-b font-semibold ${
               isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-300' : 'border-gray-200 bg-gray-50 text-gray-700'
