@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import DinoGameOverlay from '@/components/DinoGameOverlay.jsx';
 import { Helmet } from 'react-helmet';
 import {
   AlertTriangle,
@@ -94,9 +95,25 @@ export default function ConfiguracionPage() {
   const [importResult, setImportResult] = useState(null);
   const [resetConfirmation, setResetConfirmation] = useState('');
   const [isBusy, setIsBusy] = useState(false);
+  const [busyMessage, setBusyMessage] = useState('');
+  const [busyDone, setBusyDone] = useState(false);
+  const [busyDoneMessage, setBusyDoneMessage] = useState('');
+  const reloadOnClose = useRef(false);
   const fileInputRef = useRef(null);
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
+
+  const closeBusyOverlay = () => {
+    setIsBusy(false);
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    setBusyMessage('');
+
+    if (reloadOnClose.current) {
+      reloadOnClose.current = false;
+      globalThis.location.reload();
+    }
+  };
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -110,6 +127,10 @@ export default function ConfiguracionPage() {
     }
 
     setIsBusy(true);
+    setBusyMessage('Exportando datos...');
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    reloadOnClose.current = false;
     try {
       const payload = await exportOperationalBackup(user.email);
       if (format === 'excel') {
@@ -117,11 +138,11 @@ export default function ConfiguracionPage() {
       } else {
         downloadJsonBackup(payload, buildBackupFileName());
       }
-      showMessage('success', `Respaldo ${format === 'excel' ? 'Excel' : 'JSON'} exportado correctamente.`);
+      setBusyDoneMessage(`Respaldo ${format === 'excel' ? 'Excel' : 'JSON'} exportado correctamente.`);
+      setBusyDone(true);
     } catch (error) {
       console.error('Error exportando respaldo.', error);
       showMessage('error', error.message || 'Error al exportar el respaldo.');
-    } finally {
       setIsBusy(false);
     }
   };
@@ -146,6 +167,10 @@ export default function ConfiguracionPage() {
       return;
     }
 
+    setBusyMessage('');
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    reloadOnClose.current = false;
     setIsBusy(true);
     try {
       const format = importFormat === 'excel' || file.name.toLowerCase().endsWith('.xlsx') ? 'excel' : 'json';
@@ -185,22 +210,26 @@ export default function ConfiguracionPage() {
     }
 
     setIsBusy(true);
+    setBusyMessage('Importando datos a MongoDB...');
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    reloadOnClose.current = false;
     try {
       const summary = await importOperationalBackup(importPreview.payload);
       setImportResult(summary);
       setImportPreview(null);
       const hasImportErrors = summary.errors.length > 0;
-      showMessage(
-        hasImportErrors ? 'error' : 'success',
-        `${hasImportErrors ? 'Importacion parcial' : 'Respaldo importado'}. ${formatImportSummary(summary)}`
-      );
-      if (!hasImportErrors) {
-        setTimeout(() => globalThis.location.reload(), 1500);
+      const summaryText = formatImportSummary(summary);
+      if (hasImportErrors) {
+        setBusyDoneMessage(`Importacion parcial. ${summaryText}`);
+      } else {
+        reloadOnClose.current = true;
+        setBusyDoneMessage(`Respaldo importado correctamente. ${summaryText}`);
       }
+      setBusyDone(true);
     } catch (error) {
       console.error('Error importando respaldo.', error);
       showMessage('error', error.message || 'No fue posible importar el respaldo.');
-    } finally {
       setIsBusy(false);
     }
   };
@@ -223,16 +252,20 @@ export default function ConfiguracionPage() {
     }
 
     setIsBusy(true);
+    setBusyMessage('Restableciendo datos...');
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    reloadOnClose.current = false;
     try {
       await resetOperationalData(user.email);
       AlertHubSingleton.getInstance().reset();
       setResetConfirmation('');
-      showMessage('success', 'Datos operativos restablecidos. Recargando aplicacion...');
-      setTimeout(() => globalThis.location.reload(), 1500);
+      reloadOnClose.current = true;
+      setBusyDoneMessage('Datos operativos restablecidos correctamente.');
+      setBusyDone(true);
     } catch (error) {
       console.error('Error restableciendo datos.', error);
       showMessage('error', error.message || 'No fue posible restablecer los datos.');
-    } finally {
       setIsBusy(false);
     }
   };
@@ -247,7 +280,17 @@ export default function ConfiguracionPage() {
   const primaryButtonClass = 'bg-syntix-navy text-white hover:bg-syntix-navy/90';
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <>
+      {isBusy && busyMessage && (
+        <DinoGameOverlay
+          message={busyMessage}
+          done={busyDone}
+          doneMessage={busyDoneMessage}
+          onClose={closeBusyOverlay}
+        />
+      )}
+
+      <div className="space-y-6 max-w-4xl">
       <Helmet>
         <title>Configuracion | SYNTIX Drive Control</title>
       </Helmet>
@@ -479,6 +522,7 @@ export default function ConfiguracionPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

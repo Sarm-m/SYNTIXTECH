@@ -7,6 +7,7 @@ import { authService } from '@/services/api.js';
 import GoogleAuthButton from '@/components/GoogleAuthButton.jsx';
 import { isValidColombianMobile } from '@/utils/colombiaFormats.js';
 import { isValidEmailFormat } from '@/utils/emailValidation.js';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock.js';
 import {
   OTP_LENGTH,
   createEmptyOtp,
@@ -46,6 +47,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   const cooldownIntervalRef = useRef(null);
   const webOtpAbortRef = useRef(null);
   const { register, loginAfterVerification, loginWithGoogle } = useAuth();
+  useBodyScrollLock(isOpen);
 
   const clearCooldownTimer = useCallback(() => {
     if (cooldownIntervalRef.current) {
@@ -370,16 +372,34 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="max-h-[calc(100vh-1.5rem)] w-full max-w-md overflow-y-auto rounded-xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 sm:max-h-[calc(100vh-2rem)]">
+    <div
+      className="auth-modal-viewport safe-area-px safe-area-py fixed inset-0 z-[90] box-border flex items-start justify-center overflow-hidden bg-black/60 backdrop-blur-sm sm:items-center"
+      onClick={handleClose}
+      role="presentation"
+    >
+      <div
+        data-scroll-lock-allow="true"
+        className="ios-touch-scroll auth-modal-scroll max-h-full w-full max-w-md overflow-y-auto overflow-x-hidden overscroll-contain rounded-xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="register-modal-title"
+      >
 
         {step === 'register' && (
           <>
-            <div className="flex justify-between items-center p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-syntix-navy">Crear Cuenta</h2>
-              <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-6 h-6" /></button>
+            <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white p-5 sm:p-6">
+              <h2 id="register-modal-title" className="text-2xl font-bold text-syntix-navy">Crear Cuenta</h2>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Cerrar registro"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <form onSubmit={handleSubmit} noValidate className="space-y-4 p-4 sm:p-6">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 p-5 sm:p-6">
               {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
               {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
               <div>
@@ -436,7 +456,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                 <GoogleAuthButton
                   // El botón usa el mismo proveedor global configurado en main.jsx.
                   onSuccess={handleGoogleRegister}
-                  onError={() => setError('No se pudo completar el registro con Google.')}
+                  onError={(message) => setError(message || 'No se pudo completar el registro con Google.')}
                   disabled={isSubmitting}
                   text="signup_with"
                 />
@@ -455,14 +475,21 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
 
         {step === 'chooseChannel' && (
           <>
-            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+            <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white p-5 sm:p-6">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-6 h-6 text-syntix-green" />
-                <h2 className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
+                <h2 id="register-modal-title" className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
               </div>
-              <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-6 h-6" /></button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Cerrar verificacion"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <div className="space-y-5 p-4 sm:p-6">
+            <div className="space-y-5 p-5 sm:p-6">
               {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
               {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
 
@@ -470,7 +497,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                 ¿Por donde quieres recibir tu codigo de verificacion?
               </p>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-3">
                 {/* Opcion correo electronico */}
                 <button
                   type="button"
@@ -521,14 +548,21 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
 
         {step === 'verify' && (
           <>
-            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+            <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white p-5 sm:p-6">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-6 h-6 text-syntix-green" />
-                <h2 className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
+                <h2 id="register-modal-title" className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
               </div>
-              <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-6 h-6" /></button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Cerrar verificacion"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <form onSubmit={handleVerify} className="space-y-6 p-4 sm:p-6">
+            <form onSubmit={handleVerify} className="space-y-6 p-5 sm:p-6">
               <div className="text-center">
                 {otpChannel === 'sms' ? (
                   <>
@@ -547,7 +581,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
 
               {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
 
-              <div className="flex justify-center gap-3">
+              <div className="grid grid-cols-6 gap-2 sm:gap-3">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -562,7 +596,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                     onChange={e => handleOtpChange(index, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(index, e)}
                     onPaste={handleOtpPaste}
-                    className="h-12 w-10 rounded-lg border-2 border-gray-300 text-center text-xl font-bold text-syntix-navy outline-none focus:border-syntix-green focus:ring-2 focus:ring-syntix-green sm:h-14 sm:w-12 sm:text-2xl"
+                    className="h-12 min-w-0 rounded-lg border-2 border-gray-300 text-center text-lg font-bold text-syntix-navy outline-none focus:border-syntix-green focus:ring-2 focus:ring-syntix-green sm:h-14 sm:text-2xl"
                   />
                 ))}
               </div>

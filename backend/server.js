@@ -228,6 +228,12 @@ app.get('/api/health/email', async (_req, res) => {
   return res.json({ ok: true, smtp: safeSmtp });
 });
 
+app.get('/api/health/auth', (_req, res) => res.json({
+  ok: true,
+  googleConfigured: Boolean(GOOGLE_CLIENT_ID),
+  googleClientIdPrefix: GOOGLE_CLIENT_ID ? GOOGLE_CLIENT_ID.slice(0, 12) : null,
+}));
+
 /**
  * CONEXIÓN ÚNICA A MONGODB
  * Todo el backend usa esta conexión:
