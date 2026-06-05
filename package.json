@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:check": "node scripts/dev.mjs --check",
+    "docker:check": "node scripts/docker-check.mjs",
+    "setup": "npm --prefix backend install && npm --prefix apps/web install",
+    "dev:backend": "npm --prefix backend start",
+    "dev:frontend": "npm --prefix apps/web run dev:frontend",
     "build": "npm --prefix apps/web run build",
     "test": "npm --prefix backend test && npm --prefix apps/web test",
     "lint": "npm --prefix apps/web run lint",
@@ -11,6 +17,7 @@
     "secrets:check": "node scripts/check-secrets.js"
   },
   "dependencies": {
-    "axios": "^1.15.0"
+    "axios": "^1.15.0",
+    "mongodb": "^7.2.0"
   }
 }

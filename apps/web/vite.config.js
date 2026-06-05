@@ -19,6 +19,7 @@ export default defineConfig({
     },
   },
   server: {
+    strictPort: true,
     proxy: {
       '/api': {
         // En desarrollo, las llamadas API se redirigen al backend local sin exponer CORS al frontend.

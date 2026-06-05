@@ -185,6 +185,13 @@ export const authService = {
         message: response.data.message,
       };
     } catch (error) {
+      console.error('[api.googleAuth] Fallo autenticacion Google.', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        code: error?.code,
+        message: error?.message,
+      });
+
       if (shouldUseLocalStorage(error)) {
         return { success: false, useLocalStorage: true };
       }

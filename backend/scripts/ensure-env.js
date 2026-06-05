@@ -30,3 +30,8 @@ if (mongoErrors.length > 0) {
 const mongoUri = buildMongoUri(process.env);
 const sourceSummary = loadedEnvSources.length ? loadedEnvSources.join(', ') : 'process environment';
 console.log(`[ENV] Configuracion validada desde ${sourceSummary}. MONGO_URI=${redactMongoUri(mongoUri)}`);
+
+const googleClientId = String(process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+if (!googleClientId || googleClientId === 'your-google-oauth-client-id') {
+  console.warn('[ENV] Google Auth no tiene GOOGLE_CLIENT_ID configurado; el login con Google respondera 503.');
+}
