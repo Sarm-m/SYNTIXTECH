@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { CheckCircle } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext.jsx';
@@ -13,6 +13,30 @@ const GRAVITY_PS2 = 2200;
 const JUMP_VELOCITY_PS = -740;
 const BASE_SPEED = 220;
 const SPEED_RAMP = 18;
+
+const DARK_COLORS = {
+  bg: '#0f172a',
+  ground: '#475569',
+  pebble: '#334155',
+  cloud: '#1e293b',
+  dino: '#94a3b8',
+  cactus: '#22c55e',
+  text: '#cbd5e1',
+  score: '#64748b',
+  over: '#f87171',
+};
+
+const LIGHT_COLORS = {
+  bg: '#f1f5f9',
+  ground: '#94a3b8',
+  pebble: '#cbd5e1',
+  cloud: '#e2e8f0',
+  dino: '#1e3a5f',
+  cactus: '#16a34a',
+  text: '#374151',
+  score: '#6b7280',
+  over: '#dc2626',
+};
 
 function drawDino(context, x, y, legFrame, colors) {
   context.fillStyle = colors.dino;
@@ -59,38 +83,17 @@ const CACTUS_VARIANTS = [
   },
 ];
 
-export default function DinoGameOverlay({ message, done, doneMessage, onClose }) {
+const DinoCanvas = memo(function DinoCanvas({ isDarkMode }) {
   const canvasRef = useRef(null);
-  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
-    const context = canvas.getContext('2d');
-    const colors = isDarkMode
-      ? {
-          bg: '#0f172a',
-          ground: '#475569',
-          pebble: '#334155',
-          cloud: '#1e293b',
-          dino: '#94a3b8',
-          cactus: '#22c55e',
-          text: '#cbd5e1',
-          score: '#64748b',
-          over: '#f87171',
-        }
-      : {
-          bg: '#f1f5f9',
-          ground: '#94a3b8',
-          pebble: '#cbd5e1',
-          cloud: '#e2e8f0',
-          dino: '#1e3a5f',
-          cactus: '#16a34a',
-          text: '#374151',
-          score: '#6b7280',
-          over: '#dc2626',
-        };
+    const context =
+      canvas.getContext('2d', { alpha: false, desynchronized: true }) ||
+      canvas.getContext('2d');
+    const colors = isDarkMode ? DARK_COLORS : LIGHT_COLORS;
 
     let raf;
     let alive = true;
@@ -98,22 +101,26 @@ export default function DinoGameOverlay({ message, done, doneMessage, onClose })
     let dead = false;
     let elapsed = 0;
     let lastTimestamp = null;
+    let lastScore = -1;
+    let scoreText = 'Score: 00000';
     let pebblePhase = 0;
     let dinoY = GROUND_Y - DINO_HEIGHT;
     let dinoVelocityY = 0;
     let onGround = true;
-    let cacti = [];
+    const cacti = [];
     let nextCactusIn = 0.9;
     const clouds = [{ x: 80, y: 25 }, { x: 250, y: 18 }, { x: 400, y: 30 }];
 
     const reset = () => {
       elapsed = 0;
       lastTimestamp = null;
+      lastScore = -1;
+      scoreText = 'Score: 00000';
       pebblePhase = 0;
       dinoY = GROUND_Y - DINO_HEIGHT;
       dinoVelocityY = 0;
       onGround = true;
-      cacti = [];
+      cacti.length = 0;
       nextCactusIn = 0.9;
       dead = false;
       started = true;
@@ -146,8 +153,12 @@ export default function DinoGameOverlay({ message, done, doneMessage, onClose })
       event.preventDefault();
       jump();
     };
+    const handleVisibilityChange = () => {
+      lastTimestamp = null;
+    };
 
     window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     canvas.addEventListener('click', jump);
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
 
@@ -162,21 +173,22 @@ export default function DinoGameOverlay({ message, done, doneMessage, onClose })
 
       const speed = BASE_SPEED + elapsed * SPEED_RAMP;
 
-      clouds.forEach((cloud) => {
+      for (let index = 0; index < clouds.length; index += 1) {
+        const cloud = clouds[index];
         if (started && !dead) cloud.x -= speed * 0.22 * deltaSeconds;
         if (cloud.x < -60) cloud.x = CANVAS_WIDTH + 50;
         context.fillStyle = colors.cloud;
         context.fillRect(cloud.x, cloud.y, 42, 10);
         context.fillRect(cloud.x + 10, cloud.y - 8, 26, 10);
-      });
+      }
 
       context.fillStyle = colors.ground;
       context.fillRect(0, GROUND_Y + 2, CANVAS_WIDTH, 3);
 
       if (started && !dead) pebblePhase = (pebblePhase + speed * deltaSeconds) % 26;
       context.fillStyle = colors.pebble;
-      for (let i = 0; i < 22; i += 1) {
-        const pebbleX = ((i * 26 - pebblePhase) % (CANVAS_WIDTH + 26) + CANVAS_WIDTH + 26) % (CANVAS_WIDTH + 26);
+      for (let index = 0; index < 22; index += 1) {
+        const pebbleX = ((index * 26 - pebblePhase) % (CANVAS_WIDTH + 26) + CANVAS_WIDTH + 26) % (CANVAS_WIDTH + 26);
         context.fillRect(pebbleX, GROUND_Y + 8, 3, 2);
       }
 
@@ -204,13 +216,15 @@ export default function DinoGameOverlay({ message, done, doneMessage, onClose })
           nextCactusIn = 0.55 + Math.random() * 0.85;
         }
 
-        cacti.forEach((cactus) => {
+        for (let index = cacti.length - 1; index >= 0; index -= 1) {
+          const cactus = cacti[index];
           cactus.x -= speed * deltaSeconds;
-        });
-        cacti = cacti.filter((cactus) => cactus.x > -60);
+          if (cactus.x <= -60) cacti.splice(index, 1);
+        }
 
         const collisionMargin = 8;
-        for (const cactus of cacti) {
+        for (let index = 0; index < cacti.length; index += 1) {
+          const cactus = cacti[index];
           if (
             DINO_X + collisionMargin < cactus.x + cactus.width - collisionMargin &&
             DINO_X + DINO_WIDTH - collisionMargin > cactus.x + collisionMargin &&
@@ -223,18 +237,24 @@ export default function DinoGameOverlay({ message, done, doneMessage, onClose })
         }
       }
 
-      cacti.forEach((cactus) => {
+      for (let index = 0; index < cacti.length; index += 1) {
+        const cactus = cacti[index];
         context.fillStyle = colors.cactus;
         CACTUS_VARIANTS[cactus.type](context, cactus.x, cactus.y);
-      });
+      }
 
       const legFrame = onGround && started && !dead ? Math.floor(timestamp / 100) % 2 : 0;
       drawDino(context, DINO_X, dinoY, legFrame, colors);
 
+      const score = Math.floor(elapsed * 12);
+      if (score !== lastScore) {
+        lastScore = score;
+        scoreText = `Score: ${String(score).padStart(5, '0')}`;
+      }
       context.font = 'bold 13px monospace';
       context.fillStyle = colors.score;
       context.textAlign = 'right';
-      context.fillText(`Score: ${String(Math.floor(elapsed * 12)).padStart(5, '0')}`, CANVAS_WIDTH - 12, 22);
+      context.fillText(scoreText, CANVAS_WIDTH - 12, 22);
 
       if (!started) {
         context.font = '13px monospace';
@@ -262,15 +282,43 @@ export default function DinoGameOverlay({ message, done, doneMessage, onClose })
       alive = false;
       cancelAnimationFrame(raf);
       window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       canvas.removeEventListener('click', jump);
       canvas.removeEventListener('touchstart', handleTouchStart);
     };
   }, [isDarkMode]);
 
   return (
-    <div className="safe-area-px safe-area-py fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <canvas
+      ref={canvasRef}
+      width={CANVAS_WIDTH}
+      height={CANVAS_HEIGHT}
+      style={{
+        borderRadius: 8,
+        cursor: 'pointer',
+        width: '100%',
+        display: 'block',
+        contain: 'strict',
+        touchAction: 'manipulation',
+        transform: 'translate3d(0, 0, 0)',
+        willChange: 'transform',
+      }}
+      className={`border ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}
+    />
+  );
+});
+
+DinoCanvas.propTypes = {
+  isDarkMode: PropTypes.bool.isRequired,
+};
+
+function DinoGameOverlay({ message, done, doneMessage, onClose }) {
+  const { isDarkMode } = useTheme();
+
+  return (
+    <div className="safe-area-px safe-area-py fixed inset-0 z-[90] flex items-center justify-center bg-black/60">
       <div
-        className={`flex max-h-full w-[524px] max-w-full flex-col items-center gap-4 overflow-y-auto rounded-2xl border p-5 shadow-2xl sm:p-6 ${
+        className={`flex max-h-full w-[524px] max-w-full flex-col items-center gap-4 overflow-y-auto rounded-2xl border p-5 shadow-lg sm:p-6 ${
           isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-white'
         }`}
       >
@@ -308,13 +356,7 @@ export default function DinoGameOverlay({ message, done, doneMessage, onClose })
         )}
 
         <div className="relative w-full" style={{ maxWidth: CANVAS_WIDTH }}>
-          <canvas
-            ref={canvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            style={{ borderRadius: 8, cursor: 'pointer', width: '100%', display: 'block' }}
-            className={`border ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}
-          />
+          <DinoCanvas isDarkMode={isDarkMode} />
         </div>
 
         <p className={`text-center text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
@@ -337,3 +379,5 @@ DinoGameOverlay.defaultProps = {
   done: false,
   doneMessage: 'Listo.',
 };
+
+export default memo(DinoGameOverlay);

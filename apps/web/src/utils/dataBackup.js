@@ -103,6 +103,7 @@ const PREFERENCE_KEYS = [
   'syntix_simulated_date',
   'syntix_dark_mode',
 ];
+const LOCAL_STORAGE_EVENT = 'syntix-local-storage-update';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const EXCEL_DATE_EPOCH_MS = Date.UTC(1899, 11, 30);
@@ -265,6 +266,48 @@ const limitRecords = (records, label, errors) => {
   }
 
   return records;
+};
+
+const IMPORT_CONCURRENCY = 6;
+const YIELD_EVERY_OPERATIONS = 12;
+
+const yieldToMainThread = () => {
+  if (typeof globalThis.scheduler?.yield === 'function') {
+    return globalThis.scheduler.yield();
+  }
+
+  return new Promise((resolve) => setTimeout(resolve, 0));
+};
+
+const mapWithConcurrency = async (records, worker, concurrency = IMPORT_CONCURRENCY) => {
+  let nextIndex = 0;
+  let completed = 0;
+  const workerCount = Math.min(concurrency, records.length);
+
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < records.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      await worker(records[index], index);
+      completed += 1;
+      if (completed % YIELD_EVERY_OPERATIONS === 0) {
+        await yieldToMainThread();
+      }
+    }
+  }));
+};
+
+const preferenceStateValue = (key, value) => {
+  if (key === 'syntix_threshold') return Number(value);
+  if (key === 'syntix_dark_mode') return String(value) === 'true';
+  return value;
+};
+
+const notifyPreferenceUpdate = (key, value) => {
+  if (typeof globalThis.dispatchEvent !== 'function' || typeof globalThis.CustomEvent !== 'function') return;
+  globalThis.dispatchEvent(new globalThis.CustomEvent(LOCAL_STORAGE_EVENT, {
+    detail: { key, value: preferenceStateValue(key, value) },
+  }));
 };
 
 const normalizePreferenceValue = (value) => {
@@ -724,9 +767,9 @@ const buildValidEntityCounts = (normalized, recordErrors) => {
   }, {});
 };
 
-export const summarizeBackupPayload = (payload = {}) => {
+export const summarizeBackupPayload = (payload = {}, precomputedValidation = null) => {
   const normalized = normalizeBackupPayload(payload);
-  const validation = validateBackupPayload(normalized);
+  const validation = precomputedValidation || validateBackupPayload(normalized);
   const validCounts = buildValidEntityCounts(normalized, validation.recordErrors);
 
   return {
@@ -820,7 +863,7 @@ export const buildSampleBackupPayload = () => buildBackupPayload({
 const importConductores = async (records, summary) => {
   const documentToId = new Map();
 
-  for (const [index, record] of records.entries()) {
+  await mapWithConcurrency(records, async (record, index) => {
     try {
       const response = await api.post('/conductores', {
         nombre: record.nombre,
@@ -838,7 +881,7 @@ const importConductores = async (records, summary) => {
         `Conductores fila ${index + 2} (${record.documento || 'sin documento'}): ${error.response?.data?.error || error.message}`
       );
     }
-  }
+  });
 
   return documentToId;
 };
@@ -846,7 +889,7 @@ const importConductores = async (records, summary) => {
 const importVehiculos = async (records, documentToId, summary) => {
   const plateToId = new Map();
 
-  for (const [index, record] of records.entries()) {
+  await mapWithConcurrency(records, async (record, index) => {
     try {
       const placa = normalizePlate(record.placa || '');
       if (!isValidPlate(placa)) {
@@ -874,13 +917,13 @@ const importVehiculos = async (records, documentToId, summary) => {
         `Vehiculos fila ${index + 2} (${record.placa || 'sin placa'}): ${error.response?.data?.error || error.message}`
       );
     }
-  }
+  });
 
   return plateToId;
 };
 
 const importSoats = async (records, plateToId, summary) => {
-  for (const [index, record] of records.entries()) {
+  await mapWithConcurrency(records, async (record, index) => {
     try {
       const placa = normalizePlate(record.placaVehiculo || record.vehiculoPlaca || record.placa || '');
       const vehiculoId = plateToId.get(placa);
@@ -907,11 +950,11 @@ const importSoats = async (records, plateToId, summary) => {
         `SOAT fila ${index + 2} (${record.numeroPoliza || 'sin poliza'}): ${error.response?.data?.error || error.message}`
       );
     }
-  }
+  });
 };
 
 const importRtms = async (records, plateToId, summary) => {
-  for (const [index, record] of records.entries()) {
+  await mapWithConcurrency(records, async (record, index) => {
     try {
       const placa = normalizePlate(record.placaVehiculo || record.vehiculoPlaca || record.placa || '');
       const vehiculoId = plateToId.get(placa);
@@ -939,21 +982,24 @@ const importRtms = async (records, plateToId, summary) => {
         `RTM fila ${index + 2} (${record.numeroCertificado || 'sin certificado'}): ${error.response?.data?.error || error.message}`
       );
     }
-  }
+  });
 };
 
-export const importOperationalBackup = async (payload) => {
+export const importOperationalBackup = async (payload, { onProgress } = {}) => {
   const rawValidation = validateBackupPayload(payload);
   if (!rawValidation.valid) {
     throw new Error(formatValidationErrors(rawValidation));
   }
 
+  await yieldToMainThread();
   const normalizedPayload = normalizeBackupPayload(payload);
+  await yieldToMainThread();
   const validation = validateBackupPayload(normalizedPayload);
   if (!validation.valid) {
     throw new Error(formatValidationErrors(validation));
   }
 
+  await yieldToMainThread();
   const sanitizedPayload = sanitizeBackupPayload(normalizedPayload);
 
   const summary = {
@@ -970,16 +1016,56 @@ export const importOperationalBackup = async (payload) => {
   const soats = limitRecords(toArray(sanitizedPayload.soats), 'soats', summary.errors);
   const rtms = limitRecords(toArray(sanitizedPayload.rtms), 'rtms', summary.errors);
 
+  onProgress?.('Enviando lote optimizado a MongoDB...');
+  try {
+    const response = await api.post('/import/operational', {
+      conductores,
+      vehiculos,
+      soats,
+      rtms,
+    }, { timeout: 120000 });
+
+    const batchSummary = response.data;
+    const isBatchSummary = ['conductores', 'vehiculos', 'soats', 'rtms'].every(
+      (key) => Number.isInteger(batchSummary?.[key]?.processed)
+    );
+    if (isBatchSummary) {
+      if (sanitizedPayload.preferences && typeof globalThis !== 'undefined' && globalThis.localStorage) {
+        Object.entries(sanitizedPayload.preferences).forEach(([key, value]) => {
+          const normalizedValue = normalizePreferenceValue(value);
+          if (PREFERENCE_KEYS.includes(key) && normalizedValue !== '') {
+            globalThis.localStorage.setItem(key, normalizedValue);
+            notifyPreferenceUpdate(key, normalizedValue);
+          }
+        });
+      }
+
+      onProgress?.('Finalizando importacion...');
+      return batchSummary;
+    }
+  } catch (error) {
+    if (error?.response?.status && error.response.status !== 404) {
+      throw error;
+    }
+  }
+
+  onProgress?.('Importando conductores...');
   const documentToId = await importConductores(conductores, summary);
+  onProgress?.('Importando vehiculos...');
   const plateToId = await importVehiculos(vehiculos, documentToId, summary);
-  await importSoats(soats, plateToId, summary);
-  await importRtms(rtms, plateToId, summary);
+  onProgress?.('Importando documentos...');
+  await Promise.all([
+    importSoats(soats, plateToId, summary),
+    importRtms(rtms, plateToId, summary),
+  ]);
+  onProgress?.('Finalizando importacion...');
 
   if (sanitizedPayload.preferences && typeof globalThis !== 'undefined' && globalThis.localStorage) {
     Object.entries(sanitizedPayload.preferences).forEach(([key, value]) => {
       const normalizedValue = normalizePreferenceValue(value);
       if (PREFERENCE_KEYS.includes(key) && normalizedValue !== '') {
         globalThis.localStorage.setItem(key, normalizedValue);
+        notifyPreferenceUpdate(key, normalizedValue);
       }
     });
   }
@@ -988,9 +1074,9 @@ export const importOperationalBackup = async (payload) => {
 };
 
 const deleteAllByEndpoint = async (endpoint, records, summaryKey, summary) => {
-  for (const record of records) {
+  await mapWithConcurrency(records, async (record) => {
     const id = record._id || record.id;
-    if (!id) continue;
+    if (!id) return;
 
     try {
       await api.delete(`${endpoint}/${id}`);
@@ -1001,10 +1087,10 @@ const deleteAllByEndpoint = async (endpoint, records, summaryKey, summary) => {
         `${summaryKey} ${id}: ${error.response?.data?.error || error.message}`
       );
     }
-  }
+  });
 };
 
-export const resetOperationalData = async (userEmail) => {
+export const resetOperationalData = async (userEmail, { onProgress } = {}) => {
   if (!userEmail) {
     throw new Error('No hay usuario autenticado.');
   }
@@ -1019,6 +1105,7 @@ export const resetOperationalData = async (userEmail) => {
     errors: [],
   };
 
+  onProgress?.('Consultando datos para restablecer...');
   const [validacionesRes, soatsRes, rtmsRes, vehiculosRes, conductoresRes] = await Promise.all([
     api.get('/validaciones', { params }),
     api.get('/soats', { params }),
@@ -1027,19 +1114,33 @@ export const resetOperationalData = async (userEmail) => {
     api.get('/conductores', { params }),
   ]);
 
-  await deleteAllByEndpoint('/validaciones', toArray(validacionesRes.data), 'validaciones', summary);
-  await deleteAllByEndpoint('/soats', toArray(soatsRes.data), 'soats', summary);
-  await deleteAllByEndpoint('/rtms', toArray(rtmsRes.data), 'rtms', summary);
+  onProgress?.('Eliminando documentos y validaciones...');
+  await Promise.all([
+    deleteAllByEndpoint('/validaciones', toArray(validacionesRes.data), 'validaciones', summary),
+    deleteAllByEndpoint('/soats', toArray(soatsRes.data), 'soats', summary),
+    deleteAllByEndpoint('/rtms', toArray(rtmsRes.data), 'rtms', summary),
+  ]);
+  onProgress?.('Eliminando vehiculos...');
   await deleteAllByEndpoint('/vehiculos', toArray(vehiculosRes.data), 'vehiculos', summary);
+  onProgress?.('Eliminando conductores...');
   await deleteAllByEndpoint('/conductores', toArray(conductoresRes.data), 'conductores', summary);
 
   if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
-    PREFERENCE_KEYS.forEach((key) => globalThis.localStorage.removeItem(key));
+    PREFERENCE_KEYS.forEach((key) => {
+      globalThis.localStorage.removeItem(key);
+      const defaultValue = key === 'syntix_threshold'
+        ? 15
+        : key === 'syntix_dark_mode'
+          ? false
+          : new Date().toISOString().split('T')[0];
+      notifyPreferenceUpdate(key, defaultValue);
+    });
     Object.keys(globalThis.localStorage)
       .filter((key) => key.startsWith('syntix_onboarding_'))
       .forEach((key) => globalThis.localStorage.removeItem(key));
   }
 
+  onProgress?.('Finalizando restablecimiento...');
   return summary;
 };
 
@@ -1579,6 +1680,7 @@ const payloadFromExcelRows = (rowsBySheet) => {
 
 export const parseExcelBackup = async (arrayBuffer) => {
   const entries = await unzipEntries(arrayBuffer);
+  await yieldToMainThread();
   const sheets = parseWorkbookSheets(entries);
   const rowsBySheet = {};
   const sharedStrings = parseSharedStrings(entries['xl/sharedStrings.xml']);
@@ -1590,9 +1692,10 @@ export const parseExcelBackup = async (arrayBuffer) => {
     }
   });
 
-  sheets.forEach((sheet) => {
+  for (const sheet of sheets) {
     rowsBySheet[sheet.name] = parseWorksheetRows(entries[sheet.path], sharedStrings);
-  });
+    await yieldToMainThread();
+  }
 
   return payloadFromExcelRows(rowsBySheet);
 };

@@ -656,17 +656,14 @@ describe('importOperationalBackup', () => {
     const storage = createLocalStorageMock();
     vi.stubGlobal('localStorage', storage);
 
-    apiMock.post.mockImplementation(async (endpoint) => {
-      if (endpoint === '/conductores') {
-        return { data: { _id: 'cond-importado' } };
-      }
-
-      if (endpoint === '/vehiculos') {
-        return { data: { id: 'veh-importado' } };
-      }
-
-      return { data: { id: 'doc-importado' } };
-    });
+    apiMock.post.mockResolvedValue({ data: {
+      conductores: { processed: 1, errors: 0 },
+      vehiculos: { processed: 1, errors: 0 },
+      soats: { processed: 1, errors: 0 },
+      rtms: { processed: 1, errors: 0 },
+      validaciones: { processed: 0, errors: 0 },
+      errors: [],
+    } });
 
     const summary = await importOperationalBackup({
       version: BACKUP_VERSION,
@@ -719,31 +716,13 @@ describe('importOperationalBackup', () => {
       rtms: { processed: 1, errors: 0 },
       errors: [],
     });
-    expect(apiMock.post).toHaveBeenNthCalledWith(1, '/conductores', {
-      nombre: 'Laura Perez',
-      documento: '1234567890',
-      telefono: '3001234567',
-      categoria: 'B1',
-      fechaVencimiento: '2026-12-31',
-    });
-    expect(apiMock.post).toHaveBeenNthCalledWith(2, '/vehiculos', {
-      placa: 'ABC123',
-      marca: 'Toyota',
-      modelo: 'Hilux',
-      anio: 2026,
-      tipo: 'Otro',
-      conductorId: 'cond-importado',
-    });
-    expect(apiMock.post).toHaveBeenNthCalledWith(3, '/soats', expect.objectContaining({
-      vehiculoId: 'veh-importado',
-      placaVehiculo: 'ABC123',
-      numeroPoliza: 'SOAT-001',
-    }));
-    expect(apiMock.post).toHaveBeenNthCalledWith(4, '/rtms', expect.objectContaining({
-      vehiculoId: 'veh-importado',
-      placaVehiculo: 'ABC123',
-      numeroCertificado: 'RTM-001',
-    }));
+    expect(apiMock.post).toHaveBeenCalledTimes(1);
+    expect(apiMock.post).toHaveBeenCalledWith('/import/operational', expect.objectContaining({
+      conductores: [expect.objectContaining({ documento: '1234567890' })],
+      vehiculos: [expect.objectContaining({ placa: 'ABC123', conductorDocumento: '1234567890' })],
+      soats: [expect.objectContaining({ placaVehiculo: 'ABC123', numeroPoliza: 'SOAT-001' })],
+      rtms: [expect.objectContaining({ placaVehiculo: 'ABC123', numeroCertificado: 'RTM-001' })],
+    }), { timeout: 120000 });
     apiMock.post.mock.calls.forEach(([, body]) => expectNoSensitiveOrOwnershipFields(body));
     expect(storage.setItem).toHaveBeenCalledWith('syntix_threshold', '25');
     expect(storage.setItem).toHaveBeenCalledWith('syntix_simulated_date', '2026-05-22');
@@ -752,17 +731,14 @@ describe('importOperationalBackup', () => {
   });
 
   it('importa 50 conductores, vehiculos, SOAT y RTM desde payload tipo Excel sin perder vinculaciones', async () => {
-    apiMock.post.mockImplementation(async (endpoint, body) => {
-      if (endpoint === '/conductores') {
-        return { data: { _id: `cond-${body.documento}` } };
-      }
-
-      if (endpoint === '/vehiculos') {
-        return { data: { _id: `veh-${body.placa}` } };
-      }
-
-      return { data: { _id: `doc-${body.placaVehiculo || body.numeroPoliza}` } };
-    });
+    apiMock.post.mockResolvedValue({ data: {
+      conductores: { processed: 50, errors: 0 },
+      vehiculos: { processed: 50, errors: 0 },
+      soats: { processed: 50, errors: 0 },
+      rtms: { processed: 50, errors: 0 },
+      validaciones: { processed: 0, errors: 0 },
+      errors: [],
+    } });
 
     const summary = await importOperationalBackup(buildBulkExcelLikePayload());
 
@@ -773,29 +749,24 @@ describe('importOperationalBackup', () => {
       rtms: { processed: 50, errors: 0 },
       errors: [],
     });
-    expect(apiMock.post).toHaveBeenCalledTimes(200);
-    expect(apiMock.post).toHaveBeenNthCalledWith(1, '/conductores', expect.objectContaining({
-      documento: '1000000001',
-      telefono: '3001110000',
-    }));
-    expect(apiMock.post).toHaveBeenNthCalledWith(51, '/vehiculos', expect.objectContaining({
-      placa: 'DCV101',
-      conductorId: 'cond-1000000001',
-    }));
-
-    const rtmCalls = apiMock.post.mock.calls.filter(([endpoint]) => endpoint === '/rtms');
-    expect(rtmCalls).toHaveLength(50);
-    expect(rtmCalls.some(([, body]) => body.resultado === 'Pendiente')).toBe(true);
-    expect(rtmCalls[0][1]).toEqual(expect.objectContaining({
-      placaVehiculo: 'DCV101',
-      resultado: 'Pendiente',
-    }));
+    expect(apiMock.post).toHaveBeenCalledTimes(1);
+    const [, batch] = apiMock.post.mock.calls[0];
+    expect(batch.conductores).toHaveLength(50);
+    expect(batch.vehiculos).toHaveLength(50);
+    expect(batch.soats).toHaveLength(50);
+    expect(batch.rtms).toHaveLength(50);
+    expect(batch.rtms.some((record) => record.resultado === 'Pendiente')).toBe(true);
   });
 
   it('resume errores por registro sin detener toda la importacion', async () => {
-    apiMock.post
-      .mockRejectedValueOnce({ response: { data: { error: 'documento duplicado' } } })
-      .mockRejectedValueOnce({ response: { data: { error: 'placa duplicada' } } });
+    apiMock.post.mockResolvedValue({ data: {
+      conductores: { processed: 0, errors: 1 },
+      vehiculos: { processed: 0, errors: 1 },
+      soats: { processed: 0, errors: 1 },
+      rtms: { processed: 0, errors: 1 },
+      validaciones: { processed: 0, errors: 0 },
+      errors: ['documento duplicado', 'placa duplicada', 'No existe vehiculo'],
+    } });
 
     const summary = await importOperationalBackup({
       version: BACKUP_VERSION,
@@ -823,7 +794,7 @@ describe('importOperationalBackup', () => {
     expect(summary.errors.join(' ')).toContain('documento duplicado');
     expect(summary.errors.join(' ')).toContain('placa duplicada');
     expect(summary.errors.join(' ')).toContain('No existe vehiculo');
-    expect(apiMock.post).toHaveBeenCalledTimes(2);
+    expect(apiMock.post).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -835,6 +806,9 @@ describe('resetOperationalData', () => {
   });
 
   it('borra solo datos operativos y conserva credenciales locales', async () => {
+    let activeDeletes = 0;
+    let maxConcurrentDeletes = 0;
+    const progressMessages = [];
     const storage = createLocalStorageMock({
       syntix_threshold: '15',
       syntix_simulated_date: '2026-05-22',
@@ -857,14 +831,21 @@ describe('resetOperationalData', () => {
       expect(options).toEqual({ params: { email: 'usuario@example.com' } });
       return { data: recordsByEndpoint[endpoint] };
     });
-    apiMock.delete.mockImplementation((url) => {
+    apiMock.delete.mockImplementation(async (url) => {
+      activeDeletes += 1;
+      maxConcurrentDeletes = Math.max(maxConcurrentDeletes, activeDeletes);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      activeDeletes -= 1;
+
       if (url === '/rtms/rtm-1') {
         return Promise.reject({ response: { data: { error: 'RTM bloqueada' } } });
       }
       return Promise.resolve({});
     });
 
-    const summary = await resetOperationalData('usuario@example.com');
+    const summary = await resetOperationalData('usuario@example.com', {
+      onProgress: (message) => progressMessages.push(message),
+    });
 
     expect(apiMock.get).toHaveBeenCalledTimes(5);
     expect(apiMock.delete.mock.calls.map(([url]) => url)).toEqual([
@@ -883,6 +864,14 @@ describe('resetOperationalData', () => {
       conductores: { processed: 1, errors: 0 },
     });
     expect(summary.errors.join(' ')).toContain('RTM bloqueada');
+    expect(maxConcurrentDeletes).toBeGreaterThan(1);
+    expect(progressMessages).toEqual([
+      'Consultando datos para restablecer...',
+      'Eliminando documentos y validaciones...',
+      'Eliminando vehiculos...',
+      'Eliminando conductores...',
+      'Finalizando restablecimiento...',
+    ]);
     expect(storage.syntix_threshold).toBeUndefined();
     expect(storage.syntix_simulated_date).toBeUndefined();
     expect(storage.syntix_dark_mode).toBeUndefined();

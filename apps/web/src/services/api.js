@@ -31,9 +31,60 @@ const api = axios.create({
   },
 });
 
+const OPERATIONAL_GET_PATHS = new Set(['/vehiculos', '/conductores', '/soats', '/rtms', '/validaciones']);
+const OPERATIONAL_GET_CACHE_MS = 1500;
+const operationalGetCache = new Map();
+const axiosGet = api.get.bind(api);
+
+const getSessionCacheKey = () => {
+  if (typeof globalThis === 'undefined' || !globalThis.localStorage) return '';
+  return globalThis.localStorage.getItem('syntix_token') || '';
+};
+
+const getOperationalCacheKey = (url, config = {}) =>
+  `${getSessionCacheKey()}|${url}|${JSON.stringify(config.params || {})}`;
+
+// Varias vistas consumen los mismos datos al montar. Compartir la solicitud en
+// curso evita rafagas de GET identicos y reduce trabajo de Mongo y React.
+api.get = (url, config = {}) => {
+  if (!OPERATIONAL_GET_PATHS.has(url) || config.cache === false) {
+    return axiosGet(url, config);
+  }
+
+  const key = getOperationalCacheKey(url, config);
+  const cached = operationalGetCache.get(key);
+  const now = Date.now();
+
+  if (cached && cached.expiresAt > now) {
+    return cached.promise;
+  }
+
+  const entry = {
+    expiresAt: Number.POSITIVE_INFINITY,
+    promise: null,
+  };
+
+  entry.promise = axiosGet(url, config)
+    .then((response) => {
+      entry.expiresAt = Date.now() + OPERATIONAL_GET_CACHE_MS;
+      return response;
+    })
+    .catch((error) => {
+      operationalGetCache.delete(key);
+      throw error;
+    });
+  operationalGetCache.set(key, entry);
+
+  return entry.promise;
+};
+
 // Cada request intenta recuperar el token desde las dos fuentes que usa hoy el frontend.
 api.interceptors.request.use(
   (config) => {
+    if (String(config.method || 'get').toLowerCase() !== 'get') {
+      operationalGetCache.clear();
+    }
+
     // Se revisan ambos storages porque el proyecto convivió con dos formas de persistir sesión.
     const tokenStr = localStorage.getItem('syntix_token');
     const userStr = localStorage.getItem('syntix_user');
