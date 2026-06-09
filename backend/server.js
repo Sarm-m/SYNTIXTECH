@@ -1867,14 +1867,125 @@ app.post('/api/auth/email-change/verify', requireAuth, async (req, res) => {
   }
 });
 
-app.use(['/api/conductores', '/api/vehiculos', '/api/soats', '/api/rtms', '/api/validaciones'], requireAuth);
+app.use(['/api/conductores', '/api/vehiculos', '/api/soats', '/api/rtms', '/api/validaciones', '/api/import'], requireAuth);
+
+const IMPORT_BATCH_LIMIT = 1000;
+
+const importRecords = (value) => Array.isArray(value) ? value.slice(0, IMPORT_BATCH_LIMIT) : [];
+
+app.post('/api/import/operational', async (req, res) => {
+  try {
+    const ownerEmail = req.user.email;
+    const ownerEmpresa = normalizeText(req.user.empresa);
+    const errors = [];
+    const conductores = importRecords(req.body.conductores).map((record, index) => {
+      const payload = {
+        nombre: normalizeText(record.nombre),
+        documento: normalizeText(record.documento),
+        telefono: normalizeText(record.telefono),
+        categoria: normalizeText(record.categoria),
+        fechaVencimiento: normalizeText(record.fechaVencimiento),
+        ownerEmail,
+      };
+      if (!payload.nombre || !CEDULA_REGEX.test(payload.documento) || !COLOMBIAN_MOBILE_REGEX.test(payload.telefono) || !payload.fechaVencimiento) {
+        errors.push(`Conductores fila ${index + 2}: datos invalidos.`);
+        return null;
+      }
+      return payload;
+    }).filter(Boolean);
+
+    const insertedConductores = conductores.length
+      ? await Conductor.insertMany(conductores, { ordered: false })
+      : [];
+    const conductorByDocument = new Map(insertedConductores.map((record) => [record.documento, String(record._id)]));
+
+    const vehiculos = importRecords(req.body.vehiculos).map((record, index) => {
+      const placa = normalizePlate(record.placa);
+      const anio = Number(record.anio);
+      const payload = {
+        placa,
+        marca: normalizeText(record.marca),
+        modelo: normalizeText(record.modelo),
+        anio,
+        tipo: normalizeText(record.tipo || 'Otro'),
+        conductorId: record.conductorDocumento
+          ? conductorByDocument.get(String(record.conductorDocumento)) || null
+          : null,
+        ownerEmail,
+        ownerEmpresa,
+      };
+      if (!isValidPlate(placa) || !payload.marca || !payload.modelo || !Number.isInteger(anio) || anio < 1990 || anio > new Date().getFullYear() + 1) {
+        errors.push(`Vehiculos fila ${index + 2}: datos invalidos.`);
+        return null;
+      }
+      return payload;
+    }).filter(Boolean);
+
+    const insertedVehiculos = vehiculos.length
+      ? await Vehiculo.insertMany(vehiculos, { ordered: false })
+      : [];
+    const vehicleByPlate = new Map(insertedVehiculos.map((record) => [record.placa, String(record._id)]));
+
+    const buildDocuments = async (records, builder, label) => {
+      const payloads = [];
+      for (const [index, record] of importRecords(records).entries()) {
+        const placa = normalizePlate(record.placaVehiculo || record.vehiculoPlaca || record.placa);
+        const vehiculoId = vehicleByPlate.get(placa);
+        if (!vehiculoId) {
+          errors.push(`${label} fila ${index + 2}: no existe vehiculo para la placa asociada.`);
+          continue;
+        }
+        const result = await builder({ ...record, vehiculoId, placaVehiculo: placa, ownerEmail, ownerEmpresa }, ownerEmail);
+        if (result.error) {
+          errors.push(`${label} fila ${index + 2}: ${result.error}`);
+        } else {
+          payloads.push(result.payload);
+        }
+      }
+      return payloads;
+    };
+
+    const [soats, rtms] = await Promise.all([
+      buildDocuments(req.body.soats, buildSoatPayload, 'SOAT'),
+      buildDocuments(req.body.rtms, buildRtmPayload, 'RTM'),
+    ]);
+
+    const vehicleIds = [...vehicleByPlate.values()];
+    if (vehicleIds.length) {
+      await Promise.all([
+        Soat.deleteMany({ ownerEmail, vehiculoId: { $in: vehicleIds } }),
+        Rtm.deleteMany({ ownerEmail, vehiculoId: { $in: vehicleIds } }),
+      ]);
+    }
+    await Promise.all([
+      soats.length ? Soat.insertMany(soats, { ordered: false }) : Promise.resolve([]),
+      rtms.length ? Rtm.insertMany(rtms, { ordered: false }) : Promise.resolve([]),
+    ]);
+
+    return res.status(201).json({
+      conductores: { processed: insertedConductores.length, errors: importRecords(req.body.conductores).length - insertedConductores.length },
+      vehiculos: { processed: insertedVehiculos.length, errors: importRecords(req.body.vehiculos).length - insertedVehiculos.length },
+      soats: { processed: soats.length, errors: importRecords(req.body.soats).length - soats.length },
+      rtms: { processed: rtms.length, errors: importRecords(req.body.rtms).length - rtms.length },
+      validaciones: { processed: 0, errors: 0 },
+      errors,
+    });
+  } catch (err) {
+    return res.status(400).json({
+      error: duplicateOrOriginalMessage(err, 'La importacion contiene registros duplicados.'),
+    });
+  }
+});
 
 // CONDUCTORES
 // ─────────────────────────────────────────────────────────────────────────────
 
+const executeLeanQuery = (query) =>
+  typeof query?.lean === 'function' ? query.lean() : query;
+
 app.get('/api/conductores', async (req, res) => {
   try {
-    const data = await Conductor.find({ ownerEmail: req.user.email });
+    const data = await executeLeanQuery(Conductor.find({ ownerEmail: req.user.email }));
 
     return res.json(data);
   } catch (err) {
@@ -2071,7 +2182,7 @@ app.delete('/api/conductores/:id', async (req, res) => {
 
 app.get('/api/vehiculos', async (req, res) => {
   try {
-    const data = await Vehiculo.find({ ownerEmail: req.user.email });
+    const data = await executeLeanQuery(Vehiculo.find({ ownerEmail: req.user.email }));
 
     return res.json(data);
   } catch (err) {
@@ -2340,7 +2451,7 @@ app.put('/api/vehiculos/:id/conductor', async (req, res) => {
 
 app.get('/api/soats', async (req, res) => {
   try {
-    const data = await Soat.find({ ownerEmail: req.user.email });
+    const data = await executeLeanQuery(Soat.find({ ownerEmail: req.user.email }));
 
     return res.json(data);
   } catch (err) {
@@ -2438,7 +2549,7 @@ app.delete('/api/soats/:id', async (req, res) => {
 
 app.get('/api/rtms', async (req, res) => {
   try {
-    const data = await Rtm.find({ ownerEmail: req.user.email });
+    const data = await executeLeanQuery(Rtm.find({ ownerEmail: req.user.email }));
 
     return res.json(data);
   } catch (err) {

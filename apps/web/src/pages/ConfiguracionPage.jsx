@@ -85,6 +85,17 @@ const dataSteps = [
 ];
 
 const includedEntities = ['Vehiculos', 'Conductores', 'SOAT', 'RTM', 'Validaciones', 'Preferencias'];
+const OPERATIONAL_UPDATED_EVENTS = ['syntix:vehicles-updated', 'syntix:conductors-updated'];
+
+const waitForBrowserPaint = () =>
+  new Promise((resolve) => {
+    if (typeof globalThis.requestAnimationFrame === 'function') {
+      globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(resolve));
+      return;
+    }
+
+    setTimeout(resolve, 0);
+  });
 
 export default function ConfiguracionPage() {
   const [threshold, setThreshold] = useLocalStorage('syntix_threshold', 15);
@@ -98,7 +109,7 @@ export default function ConfiguracionPage() {
   const [busyMessage, setBusyMessage] = useState('');
   const [busyDone, setBusyDone] = useState(false);
   const [busyDoneMessage, setBusyDoneMessage] = useState('');
-  const reloadOnClose = useRef(false);
+  const refreshDataOnClose = useRef(false);
   const fileInputRef = useRef(null);
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
@@ -109,9 +120,11 @@ export default function ConfiguracionPage() {
     setBusyDoneMessage('');
     setBusyMessage('');
 
-    if (reloadOnClose.current) {
-      reloadOnClose.current = false;
-      globalThis.location.reload();
+    if (refreshDataOnClose.current) {
+      refreshDataOnClose.current = false;
+      OPERATIONAL_UPDATED_EVENTS.forEach((eventName) => {
+        globalThis.dispatchEvent?.(new Event(eventName));
+      });
     }
   };
 
@@ -130,7 +143,7 @@ export default function ConfiguracionPage() {
     setBusyMessage('Exportando datos...');
     setBusyDone(false);
     setBusyDoneMessage('');
-    reloadOnClose.current = false;
+    refreshDataOnClose.current = false;
     try {
       const payload = await exportOperationalBackup(user.email);
       if (format === 'excel') {
@@ -167,18 +180,21 @@ export default function ConfiguracionPage() {
       return;
     }
 
-    setBusyMessage('');
+    setBusyMessage('Validando archivo...');
     setBusyDone(false);
     setBusyDoneMessage('');
-    reloadOnClose.current = false;
+    refreshDataOnClose.current = false;
     setIsBusy(true);
     try {
+      await waitForBrowserPaint();
       const format = importFormat === 'excel' || file.name.toLowerCase().endsWith('.xlsx') ? 'excel' : 'json';
       const payload = format === 'excel'
         ? await parseExcelBackup(await file.arrayBuffer())
         : parseJsonBackup(await file.text());
+      await waitForBrowserPaint();
       const validation = validateBackupPayload(payload);
-      const summary = summarizeBackupPayload(payload);
+      await waitForBrowserPaint();
+      const summary = summarizeBackupPayload(payload, validation);
 
       setImportPreview({
         fileName: file.name,
@@ -213,9 +229,12 @@ export default function ConfiguracionPage() {
     setBusyMessage('Importando datos a MongoDB...');
     setBusyDone(false);
     setBusyDoneMessage('');
-    reloadOnClose.current = false;
+    refreshDataOnClose.current = false;
     try {
-      const summary = await importOperationalBackup(importPreview.payload);
+      await waitForBrowserPaint();
+      const summary = await importOperationalBackup(importPreview.payload, {
+        onProgress: setBusyMessage,
+      });
       setImportResult(summary);
       setImportPreview(null);
       const hasImportErrors = summary.errors.length > 0;
@@ -223,7 +242,7 @@ export default function ConfiguracionPage() {
       if (hasImportErrors) {
         setBusyDoneMessage(`Importacion parcial. ${summaryText}`);
       } else {
-        reloadOnClose.current = true;
+        refreshDataOnClose.current = true;
         setBusyDoneMessage(`Respaldo importado correctamente. ${summaryText}`);
       }
       setBusyDone(true);
@@ -255,12 +274,15 @@ export default function ConfiguracionPage() {
     setBusyMessage('Restableciendo datos...');
     setBusyDone(false);
     setBusyDoneMessage('');
-    reloadOnClose.current = false;
+    refreshDataOnClose.current = false;
     try {
-      await resetOperationalData(user.email);
+      await waitForBrowserPaint();
+      await resetOperationalData(user.email, {
+        onProgress: setBusyMessage,
+      });
       AlertHubSingleton.getInstance().reset();
       setResetConfirmation('');
-      reloadOnClose.current = true;
+      refreshDataOnClose.current = true;
       setBusyDoneMessage('Datos operativos restablecidos correctamente.');
       setBusyDone(true);
     } catch (error) {

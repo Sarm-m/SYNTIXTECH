@@ -89,14 +89,24 @@ const getWindowsProcesses = () => {
 
 const processes = isWindows ? getWindowsProcesses() : getPosixProcesses();
 const byParent = new Map();
+const byPid = new Map(processes.map((proc) => [proc.pid, proc]));
 
 for (const proc of processes) {
   if (!byParent.has(proc.ppid)) byParent.set(proc.ppid, []);
   byParent.get(proc.ppid).push(proc);
 }
 
+// Shell recipes can contain words such as "npm" or "vite" and look like dev
+// commands. Never terminate the script's own parent chain.
+const ancestorPids = new Set([currentPid]);
+let ancestor = byPid.get(currentPid);
+while (ancestor && !ancestorPids.has(ancestor.ppid)) {
+  ancestorPids.add(ancestor.ppid);
+  ancestor = byPid.get(ancestor.ppid);
+}
+
 const initialMatches = processes.filter((proc) => {
-  if (proc.pid === currentPid) return false;
+  if (ancestorPids.has(proc.pid)) return false;
   if (!commandLooksLikeProjectDev(proc.command)) return false;
 
   if (isWindows) {
@@ -108,7 +118,7 @@ const initialMatches = processes.filter((proc) => {
 
 const selected = new Map();
 const visit = (proc) => {
-  if (!proc || proc.pid === currentPid || selected.has(proc.pid)) return;
+  if (!proc || ancestorPids.has(proc.pid) || selected.has(proc.pid)) return;
   selected.set(proc.pid, proc);
   for (const child of byParent.get(proc.pid) || []) {
     visit(child);

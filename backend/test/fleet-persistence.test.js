@@ -20,10 +20,12 @@ const originalMethods = {
   vehiculoFindOne: models.Vehiculo.findOne,
   vehiculoFindOneAndDelete: models.Vehiculo.findOneAndDelete,
   vehiculoSave: models.Vehiculo.prototype.save,
+  vehiculoInsertMany: models.Vehiculo.insertMany,
   conductorFind: models.Conductor.find,
   conductorFindOne: models.Conductor.findOne,
   conductorFindOneAndDelete: models.Conductor.findOneAndDelete,
   conductorSave: models.Conductor.prototype.save,
+  conductorInsertMany: models.Conductor.insertMany,
   conductorUpdateMany: models.Conductor.updateMany,
   soatFind: models.Soat.find,
   soatFindOne: models.Soat.findOne,
@@ -47,10 +49,12 @@ const restoreModelStubs = () => {
   models.Vehiculo.findOne = originalMethods.vehiculoFindOne;
   models.Vehiculo.findOneAndDelete = originalMethods.vehiculoFindOneAndDelete;
   models.Vehiculo.prototype.save = originalMethods.vehiculoSave;
+  models.Vehiculo.insertMany = originalMethods.vehiculoInsertMany;
   models.Conductor.find = originalMethods.conductorFind;
   models.Conductor.findOne = originalMethods.conductorFindOne;
   models.Conductor.findOneAndDelete = originalMethods.conductorFindOneAndDelete;
   models.Conductor.prototype.save = originalMethods.conductorSave;
+  models.Conductor.insertMany = originalMethods.conductorInsertMany;
   models.Conductor.updateMany = originalMethods.conductorUpdateMany;
   models.Soat.find = originalMethods.soatFind;
   models.Soat.findOne = originalMethods.soatFindOne;
@@ -170,6 +174,55 @@ test('crear vehiculo valido persiste placa normalizada y ownerEmail autenticado'
   assert.equal(savedVehicle.placa, 'ABC123');
   assert.equal(savedVehicle.ownerEmail, user.email);
   assert.equal(savedVehicle.ownerEmpresa, user.empresa);
+});
+
+test('importacion operacional usa inserciones batch y conserva ownership autenticado', async () => {
+  const { token, user } = useAuthenticatedUser();
+  let conductorBatch;
+  let vehicleBatch;
+
+  models.Conductor.insertMany = async (records) => {
+    conductorBatch = records;
+    return records.map((record, index) => ({ ...record, _id: `conductor-${index}` }));
+  };
+  models.Vehiculo.insertMany = async (records) => {
+    vehicleBatch = records;
+    return records.map((record, index) => ({ ...record, _id: `vehicle-${index}` }));
+  };
+  models.Soat.deleteMany = async () => ({ deletedCount: 0 });
+  models.Rtm.deleteMany = async () => ({ deletedCount: 0 });
+
+  const result = await request('/api/import/operational', {
+    method: 'POST',
+    token,
+    body: {
+      conductores: [{
+        nombre: 'Laura Perez',
+        documento: '1234567890',
+        telefono: '3001234567',
+        categoria: 'B1',
+        fechaVencimiento: '2027-01-01',
+        ownerEmail: 'otro@example.com',
+      }],
+      vehiculos: [{
+        placa: 'abc-123',
+        marca: 'Toyota',
+        modelo: 'Hilux',
+        anio: 2026,
+        tipo: 'Pickup',
+        conductorDocumento: '1234567890',
+        ownerEmail: 'otro@example.com',
+      }],
+    },
+  });
+
+  assert.equal(result.status, 201);
+  assert.equal(result.data.conductores.processed, 1);
+  assert.equal(result.data.vehiculos.processed, 1);
+  assert.equal(conductorBatch[0].ownerEmail, user.email);
+  assert.equal(vehicleBatch[0].ownerEmail, user.email);
+  assert.equal(vehicleBatch[0].placa, 'ABC123');
+  assert.equal(vehicleBatch[0].conductorId, 'conductor-0');
 });
 
 test('rechaza placa invalida y anio invalido antes de persistir vehiculos', async () => {
