@@ -21,6 +21,10 @@ apps/**/dist/
 coverage/
 apps/**/coverage/
 
+# Python cache
+__pycache__/
+*.py[cod]
+
 # vite cache
 .vite/
 .vite-temp/
@@ -57,3 +61,10 @@ Thumbs.db
 *.run.xml
 *.bcf
 *.xdv
+
+# Generated import test files
+test-data/*.xlsx
+drive-control-import-*.xlsx
+
+# Local archived components
+local-archive/

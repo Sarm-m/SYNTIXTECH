@@ -242,6 +242,7 @@ export function AuthProvider({ children }) {
         return {
           success: true,
           created: Boolean(apiResult.data.created),
+          mode: apiResult.data.mode,
           user: apiResult.data.user,
           message: apiResult.message,
         };
@@ -255,7 +256,13 @@ export function AuthProvider({ children }) {
         };
       }
 
-      return { success: false, message: apiResult.message || 'No se pudo autenticar con Google' };
+      return {
+        success: false,
+        message: apiResult.message || 'No se pudo autenticar con Google',
+        mode: apiResult.data?.mode,
+        requiresCompanyName: Boolean(apiResult.data?.requiresCompanyName),
+        requiresPhone: Boolean(apiResult.data?.requiresPhone),
+      };
     } catch (err) {
       console.error('Error inesperado en autenticacion con Google.', err);
       return { success: false, message: 'Error inesperado al autenticar con Google.' };

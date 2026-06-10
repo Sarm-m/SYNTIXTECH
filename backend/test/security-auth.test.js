@@ -218,6 +218,41 @@ test('Google login nuevo crea cuenta Google-only con perfil completo', async () 
   assert.equal(result.data.data.user.hasPassword, false);
   assert.equal(result.data.data.user.authProvider, 'google');
   assert.equal(result.data.data.user.password, undefined);
+  assert.equal(result.data.data.created, true);
+  assert.equal(result.data.data.mode, 'register');
+  assert.equal(result.data.data.requiresCompanyName, false);
+  assert.equal(result.data.data.requiresPhone, false);
+});
+
+test('Google nuevo sin perfil empresarial solicita completar registro de forma estructurada', async () => {
+  let saveCalled = false;
+
+  helpers.setGoogleIdentityVerifierForTest(async () => ({
+    email: 'google-nuevo@example.com',
+    email_verified: true,
+    name: 'Usuario Google Nuevo',
+    sub: 'google-sub-new',
+  }));
+
+  models.Usuario.findOne = async () => null;
+  models.Usuario.prototype.save = async function saveGoogleUserStub() {
+    saveCalled = true;
+    return this;
+  };
+
+  const result = await request('/api/auth/google', {
+    method: 'POST',
+    body: {
+      idToken: 'fake-google-token',
+    },
+  });
+
+  assert.equal(result.status, 409);
+  assert.equal(result.data.success, false);
+  assert.equal(result.data.data.mode, 'register');
+  assert.equal(result.data.data.requiresCompanyName, true);
+  assert.equal(result.data.data.requiresPhone, true);
+  assert.equal(saveCalled, false);
 });
 
 test('Google login sobre cuenta local conserva perfil y queda mixto', async () => {
@@ -261,6 +296,56 @@ test('Google login sobre cuenta local conserva perfil y queda mixto', async () =
   assert.equal(result.data.data.user.googleId, 'google-sub-2');
   assert.equal(result.data.data.user.hasPassword, true);
   assert.equal(result.data.data.user.authProvider, 'mixed');
+  assert.equal(result.data.data.created, false);
+  assert.equal(result.data.data.mode, 'login');
+  assert.equal(result.data.data.requiresCompanyName, false);
+  assert.equal(result.data.data.requiresPhone, false);
+});
+
+test('Google login reconoce cuenta existente por provider id aunque cambie el correo', async () => {
+  const existingUser = {
+    _id: 'google-existing-user',
+    nombre: 'Usuario Google Existente',
+    email: 'correo-anterior@example.com',
+    empresa: 'Empresa Existente',
+    telefono: '3007654321',
+    role: 'user',
+    isVerified: true,
+    hasLocalPassword: false,
+    googleId: 'google-provider-existing',
+    save: async function saveGoogleUserStub() {
+      return this;
+    },
+  };
+  const lookups = [];
+
+  helpers.setGoogleIdentityVerifierForTest(async () => ({
+    email: 'correo-nuevo@example.com',
+    email_verified: true,
+    name: 'Usuario Google Existente',
+    sub: 'google-provider-existing',
+  }));
+
+  models.Usuario.findOne = async (query) => {
+    lookups.push(query);
+    return query.googleId ? existingUser : null;
+  };
+
+  const result = await request('/api/auth/google', {
+    method: 'POST',
+    body: {
+      idToken: 'fake-google-token',
+    },
+  });
+
+  assert.equal(result.status, 200);
+  assert.deepEqual(lookups, [
+    { email: 'correo-nuevo@example.com' },
+    { googleId: 'google-provider-existing' },
+  ]);
+  assert.equal(result.data.data.mode, 'login');
+  assert.equal(result.data.data.created, false);
+  assert.equal(result.data.data.user.email, 'correo-anterior@example.com');
 });
 
 test('ruta protegida sin token responde 401', async () => {

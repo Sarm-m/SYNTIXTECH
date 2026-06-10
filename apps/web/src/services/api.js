@@ -249,6 +249,8 @@ export const authService = {
       return {
         success: false,
         message: normalizeApiErrorMessage(error, 'No se pudo autenticar con Google'),
+        data: error?.response?.data?.data || null,
+        status: error?.response?.status,
       };
     }
   },
