@@ -44,7 +44,7 @@ apps/web/.env.local
 Solo debe contener variables publicas `VITE_*`:
 
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=/api
 VITE_GOOGLE_CLIENT_ID=
 VITE_ENABLE_LOCAL_AUTH_FALLBACK=false
 ```

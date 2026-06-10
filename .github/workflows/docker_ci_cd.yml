@@ -24,6 +24,10 @@ on:
       - ".github/workflows/docker_ci_cd.yml"
   workflow_dispatch:
 
+concurrency:
+  group: docker-ci-cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
