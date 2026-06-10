@@ -503,10 +503,8 @@ For history cleanup guidance, see:
 ├── apps/
 │   └── web/
 ├── backend/
-├── conf/
 ├── docs/
 ├── scripts/
-├── wireframe_soat/
 ├── .github/
 │   └── workflows/
 ├── Dockerfile
