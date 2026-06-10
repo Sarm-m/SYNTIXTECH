@@ -8,7 +8,6 @@ import { DocumentsProvider } from '@/contexts/DocumentsContext.jsx';
 import { RtmProvider } from '@/contexts/RtmContext.jsx';
 
 import HomePage from '@/pages/HomePage.jsx';
-import LoginPage from '@/pages/LoginPage.jsx';
 
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import AlertasPage from '@/pages/AlertasPage.jsx';
@@ -33,7 +32,7 @@ function App() {
               {/* Las rutas públicas alimentan la landing y el acceso inicial al sistema. */}
               <Route path="/" element={<HomePage />} />
               <Route path="/team" element={<Navigate to={{ pathname: '/', hash: '#equipo' }} replace />} />
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/login" element={<Navigate to="/" replace />} />
               <Route path="/planes" element={<Navigate to={{ pathname: '/', hash: '#planes' }} replace />} />
 
               {/* El perfil, reportes y demás módulos viven dentro del mismo shell

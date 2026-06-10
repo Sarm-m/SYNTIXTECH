@@ -1,4 +1,4 @@
-name: CD - Generación de Artefacto y Entrega Continua
+name: Artifact Delivery CD
 on:
   push:
     # Solo se empaqueta al integrar en ramas de consolidación del proyecto.
@@ -49,6 +49,6 @@ jobs:
     uses: ./.github/workflows/notify_discord.yml
     with:
       status: ${{ needs.entrega.result }}
-      workflow_name: "CD - Generación de Artefacto y Entrega Continua"
+      workflow_name: "Artifact Delivery CD"
     secrets:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

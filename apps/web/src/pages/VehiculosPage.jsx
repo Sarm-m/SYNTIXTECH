@@ -144,7 +144,96 @@ export default function VehiculosPage() {
           </select>
         </div>
 
-        <div data-onboarding="vehicles-table" className="overflow-x-auto">
+        <div data-onboarding="vehicles-table" className="md:hidden p-4 space-y-3">
+          {filteredVehiculos.map((v) => {
+            const statusSummary = v.estadoRazones
+              ? {
+                status: v.estadoGeneral,
+                reason: v.estadoRazon,
+                reasons: v.estadoRazones,
+              }
+              : getVehicleStatusSummary(v);
+            const visibleReasons = statusSummary.reasons?.slice(0, VISIBLE_STATUS_REASONS) || [
+              statusSummary.reason,
+            ];
+
+            return (
+              <article
+                key={v.id}
+                className={`rounded-xl border p-4 shadow-sm ${isDarkMode ? 'border-slate-800 bg-slate-950/50' : 'border-gray-100 bg-white'}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className={`break-words text-lg font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>{v.placa}</p>
+                    <p className={`break-words text-sm ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
+                      {v.marca} {v.modelo} · {v.anio}
+                    </p>
+                  </div>
+                  <StatusBadge status={statusSummary.status} />
+                </div>
+
+                <dl className={`mt-4 grid grid-cols-1 gap-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Tipo</dt>
+                    <dd className="break-words">{v.tipo}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Usuario</dt>
+                    <dd className="break-words">{v.ownerLabel}</dd>
+                    {v.ownerEmail && <dd className="break-all text-xs opacity-70">{v.ownerEmail}</dd>}
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Conductor</dt>
+                    <dd className="break-words">{v.conductor?.nombre || 'Sin asignar'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Estado</dt>
+                    <dd className="mt-1 space-y-1">
+                      {visibleReasons.map((reason) => (
+                        <span key={reason} className="block break-words text-xs font-semibold">{reason}</span>
+                      ))}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(v)}
+                    className={`inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                      isDarkMode
+                        ? 'bg-syntix-green/10 text-syntix-green hover:bg-syntix-green/20'
+                        : 'bg-syntix-navy/5 text-syntix-navy hover:bg-syntix-navy/10'
+                    }`}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteVehicle(v.id)}
+                    className={`inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                      isDarkMode
+                        ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                        : 'bg-red-50 text-syntix-red hover:bg-red-100'
+                    }`}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+
+          {filteredVehiculos.length === 0 && (
+            <div className={`rounded-xl border p-6 text-center ${isDarkMode ? 'border-slate-800 text-slate-400' : 'border-gray-100 text-gray-500'}`}>
+              <Car className="mx-auto mb-3 h-8 w-8 opacity-60" />
+              <p className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-gray-700'}`}>Aun no hay vehiculos para mostrar.</p>
+              <p className="mt-1 text-sm">Agrega un vehiculo para comenzar a gestionar la flota.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className={`w-full text-left text-sm ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
             <thead className={`border-b font-semibold ${
               isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-300' : 'border-gray-200 bg-gray-50 text-gray-700'

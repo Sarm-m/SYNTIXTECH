@@ -54,6 +54,64 @@
   }
 }
 
+@layer utilities {
+  .dvh-screen {
+    height: 100vh;
+    min-height: 100vh;
+  }
+
+  @supports (height: 100dvh) {
+    .dvh-screen {
+      height: 100dvh;
+      min-height: 100dvh;
+    }
+  }
+
+  .safe-area-px {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .safe-area-py {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .onboarding-modal-viewport {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+
+  @supports (height: 100dvh) {
+    .onboarding-modal-viewport {
+      height: 100dvh;
+    }
+  }
+
+  .auth-modal-viewport {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+
+  @supports (height: 100dvh) {
+    .auth-modal-viewport {
+      height: 100dvh;
+    }
+  }
+
+  .ios-touch-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .auth-modal-scroll {
+    touch-action: pan-y;
+  }
+}
+
 body {
 	font-family: 'DM Sans', sans-serif;
     background-color: #f9fafb;

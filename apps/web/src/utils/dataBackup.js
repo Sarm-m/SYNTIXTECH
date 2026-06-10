@@ -11,8 +11,8 @@ import {
 
 export const BACKUP_VERSION = '1.0';
 export const MAX_BACKUP_FILE_BYTES = 5 * 1024 * 1024;
-export const MAX_RECORDS_PER_ENTITY = 500;
-export const MAX_DOCUMENT_RECORDS_PER_ENTITY = 1000;
+export const MAX_RECORDS_PER_ENTITY = 10000;
+export const MAX_DOCUMENT_RECORDS_PER_ENTITY = 10000;
 
 export const ENTITY_RECORD_LIMITS = {
   vehiculos: MAX_RECORDS_PER_ENTITY,
@@ -103,6 +103,7 @@ const PREFERENCE_KEYS = [
   'syntix_simulated_date',
   'syntix_dark_mode',
 ];
+const LOCAL_STORAGE_EVENT = 'syntix-local-storage-update';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const EXCEL_DATE_EPOCH_MS = Date.UTC(1899, 11, 30);
@@ -110,6 +111,9 @@ const MIN_EXCEL_DATE_SERIAL = 20_000;
 const MAX_EXCEL_DATE_SERIAL = 80_000;
 
 const RTM_RESULTADOS = new Set(['Aprobado', 'Rechazado', 'Pendiente']);
+const DRIVER_CATEGORIES = new Set(['A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']);
+const VALIDATION_TYPES = new Set(['SOAT', 'RTM', 'Documentos', 'Revision preventiva']);
+const VALIDATION_STATES = new Set(['Aprobado', 'Pendiente', 'Rechazado']);
 const RTM_RESULT_ALIASES = {
   aprobado: 'Aprobado',
   aprobada: 'Aprobado',
@@ -256,15 +260,55 @@ const findSensitiveFieldNames = (value, fields = new Set()) => {
 
 const toArray = (value) => (Array.isArray(value) ? value : []);
 
-const limitRecords = (records, label, errors) => {
-  const maxRecords = ENTITY_RECORD_LIMITS[label] || MAX_RECORDS_PER_ENTITY;
+const IMPORT_CONCURRENCY = 6;
+const YIELD_EVERY_OPERATIONS = 12;
 
-  if (records.length > maxRecords) {
-    errors.push(`El archivo supera el maximo de ${maxRecords} registros en ${label}.`);
-    return records.slice(0, maxRecords);
+const yieldToMainThread = () => {
+  if (typeof globalThis.scheduler?.yield === 'function') {
+    return globalThis.scheduler.yield();
   }
 
-  return records;
+  return new Promise((resolve) => setTimeout(resolve, 0));
+};
+
+const performanceNow = () =>
+  typeof globalThis.performance?.now === 'function' ? globalThis.performance.now() : Date.now();
+
+const logImportTiming = (stage, startedAt) => {
+  if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
+    console.info(`[import] ${stage}: ${Math.round(performanceNow() - startedAt)}ms`);
+  }
+};
+
+const mapWithConcurrency = async (records, worker, concurrency = IMPORT_CONCURRENCY) => {
+  let nextIndex = 0;
+  let completed = 0;
+  const workerCount = Math.min(concurrency, records.length);
+
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < records.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      await worker(records[index], index);
+      completed += 1;
+      if (completed % YIELD_EVERY_OPERATIONS === 0) {
+        await yieldToMainThread();
+      }
+    }
+  }));
+};
+
+const preferenceStateValue = (key, value) => {
+  if (key === 'syntix_threshold') return Number(value);
+  if (key === 'syntix_dark_mode') return String(value) === 'true';
+  return value;
+};
+
+const notifyPreferenceUpdate = (key, value) => {
+  if (typeof globalThis.dispatchEvent !== 'function' || typeof globalThis.CustomEvent !== 'function') return;
+  globalThis.dispatchEvent(new globalThis.CustomEvent(LOCAL_STORAGE_EVENT, {
+    detail: { key, value: preferenceStateValue(key, value) },
+  }));
 };
 
 const normalizePreferenceValue = (value) => {
@@ -364,17 +408,6 @@ const formatValidationErrors = (validation) => [
 const validateRequiredText = (record, fieldName) =>
   String(record?.[fieldName] ?? '').trim().length > 0;
 
-const validateDateField = (record, fieldName, entity, index, recordErrors) => {
-  const value = record?.[fieldName];
-  if (value === undefined || value === null || value === '') {
-    return;
-  }
-
-  if (!isValidDateValue(toExcelDateText(value))) {
-    addRecordError(recordErrors, entity, index, `${fieldName} debe tener formato YYYY-MM-DD.`);
-  }
-};
-
 const validateRequiredDateField = (record, fieldName, entity, index, recordErrors) => {
   const value = toExcelDateText(record?.[fieldName]);
   if (!value) {
@@ -394,6 +427,7 @@ const validateBackupRecords = (payload) => {
 
   toArray(payload.vehiculos).forEach((vehicle, index) => {
     const placa = normalizePlate(vehicle?.placa || '');
+    const anio = Number(vehicle?.anio);
     if (!placa) {
       addRecordError(recordErrors, 'vehiculos', index, 'La placa es obligatoria.');
     } else if (!isValidPlate(placa)) {
@@ -404,8 +438,12 @@ const validateBackupRecords = (payload) => {
       normalizedVehiclePlates.add(placa);
     }
 
-    if (vehicle?.anio !== undefined && vehicle?.anio !== '' && Number.isNaN(Number(vehicle.anio))) {
-      addRecordError(recordErrors, 'vehiculos', index, 'El anio debe ser numerico.');
+    if (
+      vehicle?.anio !== undefined &&
+      vehicle?.anio !== '' &&
+      (!Number.isInteger(anio) || anio < 1990 || anio > new Date().getFullYear() + 1)
+    ) {
+      addRecordError(recordErrors, 'vehiculos', index, 'El anio debe estar entre 1990 y el proximo anio.');
     }
   });
 
@@ -429,8 +467,8 @@ const validateBackupRecords = (payload) => {
     } else if (!isValidColombianMobile(telefono)) {
       addRecordError(recordErrors, 'conductores', index, 'El celular debe tener 10 digitos e iniciar por 3.');
     }
-    if (!validateRequiredText(driver, 'categoria')) {
-      addRecordError(recordErrors, 'conductores', index, 'La categoria es obligatoria.');
+    if (!DRIVER_CATEGORIES.has(String(driver?.categoria || '').trim())) {
+      addRecordError(recordErrors, 'conductores', index, 'La categoria no es valida.');
     }
     validateRequiredDateField(driver, 'fechaVencimiento', 'conductores', index, recordErrors);
   });
@@ -445,8 +483,23 @@ const validateBackupRecords = (payload) => {
     if (!validateRequiredText(soat, 'numeroPoliza')) {
       addRecordError(recordErrors, 'soats', index, 'El numeroPoliza es obligatorio.');
     }
-    validateDateField(soat, 'fechaInicioVigencia', 'soats', index, recordErrors);
-    validateDateField(soat, 'fechaFinVigencia', 'soats', index, recordErrors);
+    validateRequiredDateField(soat, 'fechaExpedicion', 'soats', index, recordErrors);
+    validateRequiredDateField(soat, 'fechaInicioVigencia', 'soats', index, recordErrors);
+    validateRequiredDateField(soat, 'fechaFinVigencia', 'soats', index, recordErrors);
+    if (
+      isValidDateValue(soat?.fechaInicioVigencia) &&
+      isValidDateValue(soat?.fechaFinVigencia) &&
+      !isDateRangeValid(soat.fechaInicioVigencia, soat.fechaFinVigencia)
+    ) {
+      addRecordError(recordErrors, 'soats', index, 'La fecha fin no puede ser anterior al inicio de vigencia.');
+    }
+    if (
+      isValidDateValue(soat?.fechaExpedicion) &&
+      isValidDateValue(soat?.fechaFinVigencia) &&
+      !isDateRangeValid(soat.fechaExpedicion, soat.fechaFinVigencia)
+    ) {
+      addRecordError(recordErrors, 'soats', index, 'La fecha fin no puede ser anterior a la expedicion.');
+    }
   });
 
   toArray(payload.rtms).forEach((rtm, index) => {
@@ -477,7 +530,17 @@ const validateBackupRecords = (payload) => {
   });
 
   toArray(payload.validaciones).forEach((validation, index) => {
-    validateDateField(validation, 'fecha', 'validaciones', index, recordErrors);
+    const placa = normalizePlate(validation?.placa || validation?.placaVehiculo || '');
+    if (!normalizedVehiclePlates.has(placa)) {
+      addRecordError(recordErrors, 'validaciones', index, `La placa ${placa || '(vacia)'} no existe en Vehiculos.`);
+    }
+    if (!VALIDATION_TYPES.has(String(validation?.tipo || '').trim())) {
+      addRecordError(recordErrors, 'validaciones', index, 'El tipo de validacion no es valido.');
+    }
+    if (!VALIDATION_STATES.has(String(validation?.estado || '').trim())) {
+      addRecordError(recordErrors, 'validaciones', index, 'El estado de validacion no es valido.');
+    }
+    validateRequiredDateField(validation, 'fecha', 'validaciones', index, recordErrors);
   });
 
   return recordErrors;
@@ -522,6 +585,14 @@ export const validateBackupPayload = (payload) => {
 
   if (payload.preferences !== undefined && !hasValidPreferencesSection) {
     errors.push('La seccion preferences debe ser un objeto con preferencias validas.');
+  }
+
+  if (hasValidPreferencesSection && Object.prototype.hasOwnProperty.call(payload.preferences, 'syntix_threshold')) {
+    const thresholdText = normalizePreferenceValue(payload.preferences.syntix_threshold);
+    const threshold = Number(thresholdText);
+    if (thresholdText !== '' && (!Number.isInteger(threshold) || threshold < 1 || threshold > 60)) {
+      errors.push('La preferencia syntix_threshold debe ser un entero entre 1 y 60.');
+    }
   }
 
   if (!hasEntities && !hasPreferences) {
@@ -724,9 +795,9 @@ const buildValidEntityCounts = (normalized, recordErrors) => {
   }, {});
 };
 
-export const summarizeBackupPayload = (payload = {}) => {
+export const summarizeBackupPayload = (payload = {}, precomputedValidation = null) => {
   const normalized = normalizeBackupPayload(payload);
-  const validation = validateBackupPayload(normalized);
+  const validation = precomputedValidation || validateBackupPayload(normalized);
   const validCounts = buildValidEntityCounts(normalized, validation.recordErrors);
 
   return {
@@ -820,7 +891,7 @@ export const buildSampleBackupPayload = () => buildBackupPayload({
 const importConductores = async (records, summary) => {
   const documentToId = new Map();
 
-  for (const [index, record] of records.entries()) {
+  await mapWithConcurrency(records, async (record, index) => {
     try {
       const response = await api.post('/conductores', {
         nombre: record.nombre,
@@ -838,7 +909,7 @@ const importConductores = async (records, summary) => {
         `Conductores fila ${index + 2} (${record.documento || 'sin documento'}): ${error.response?.data?.error || error.message}`
       );
     }
-  }
+  });
 
   return documentToId;
 };
@@ -846,7 +917,7 @@ const importConductores = async (records, summary) => {
 const importVehiculos = async (records, documentToId, summary) => {
   const plateToId = new Map();
 
-  for (const [index, record] of records.entries()) {
+  await mapWithConcurrency(records, async (record, index) => {
     try {
       const placa = normalizePlate(record.placa || '');
       if (!isValidPlate(placa)) {
@@ -874,13 +945,13 @@ const importVehiculos = async (records, documentToId, summary) => {
         `Vehiculos fila ${index + 2} (${record.placa || 'sin placa'}): ${error.response?.data?.error || error.message}`
       );
     }
-  }
+  });
 
   return plateToId;
 };
 
 const importSoats = async (records, plateToId, summary) => {
-  for (const [index, record] of records.entries()) {
+  await mapWithConcurrency(records, async (record, index) => {
     try {
       const placa = normalizePlate(record.placaVehiculo || record.vehiculoPlaca || record.placa || '');
       const vehiculoId = plateToId.get(placa);
@@ -907,11 +978,11 @@ const importSoats = async (records, plateToId, summary) => {
         `SOAT fila ${index + 2} (${record.numeroPoliza || 'sin poliza'}): ${error.response?.data?.error || error.message}`
       );
     }
-  }
+  });
 };
 
 const importRtms = async (records, plateToId, summary) => {
-  for (const [index, record] of records.entries()) {
+  await mapWithConcurrency(records, async (record, index) => {
     try {
       const placa = normalizePlate(record.placaVehiculo || record.vehiculoPlaca || record.placa || '');
       const vehiculoId = plateToId.get(placa);
@@ -939,22 +1010,22 @@ const importRtms = async (records, plateToId, summary) => {
         `RTM fila ${index + 2} (${record.numeroCertificado || 'sin certificado'}): ${error.response?.data?.error || error.message}`
       );
     }
-  }
+  });
 };
 
-export const importOperationalBackup = async (payload) => {
-  const rawValidation = validateBackupPayload(payload);
-  if (!rawValidation.valid) {
-    throw new Error(formatValidationErrors(rawValidation));
+export const importOperationalBackup = async (payload, { onProgress, precomputedValidation = null } = {}) => {
+  onProgress?.('Validando datos...');
+  const validationStartedAt = performanceNow();
+  if (findSensitiveFieldNames(payload).size > 0) {
+    throw new Error('El archivo contiene campos sensibles no permitidos.');
   }
-
   const normalizedPayload = normalizeBackupPayload(payload);
-  const validation = validateBackupPayload(normalizedPayload);
+  await yieldToMainThread();
+  const validation = precomputedValidation || validateBackupPayload(normalizedPayload);
   if (!validation.valid) {
     throw new Error(formatValidationErrors(validation));
   }
-
-  const sanitizedPayload = sanitizeBackupPayload(normalizedPayload);
+  logImportTiming('validacion frontend', validationStartedAt);
 
   const summary = {
     conductores: { processed: 0, errors: 0 },
@@ -965,21 +1036,67 @@ export const importOperationalBackup = async (payload) => {
     errors: [],
   };
 
-  const conductores = limitRecords(toArray(sanitizedPayload.conductores), 'conductores', summary.errors);
-  const vehiculos = limitRecords(toArray(sanitizedPayload.vehiculos), 'vehiculos', summary.errors);
-  const soats = limitRecords(toArray(sanitizedPayload.soats), 'soats', summary.errors);
-  const rtms = limitRecords(toArray(sanitizedPayload.rtms), 'rtms', summary.errors);
+  const conductores = toArray(normalizedPayload.conductores);
+  const vehiculos = toArray(normalizedPayload.vehiculos);
+  const soats = toArray(normalizedPayload.soats);
+  const rtms = toArray(normalizedPayload.rtms);
+  const validaciones = toArray(normalizedPayload.validaciones);
 
+  onProgress?.('Enviando lote a MongoDB...');
+  await yieldToMainThread();
+  try {
+    onProgress?.('Escribiendo datos en MongoDB...');
+    const requestStartedAt = performanceNow();
+    const response = await api.post('/import/operational', {
+      conductores,
+      vehiculos,
+      soats,
+      rtms,
+      validaciones,
+    }, { timeout: 120000 });
+    logImportTiming('request batch a MongoDB', requestStartedAt);
+
+    const batchSummary = response.data;
+    const isBatchSummary = ['conductores', 'vehiculos', 'soats', 'rtms'].every(
+      (key) => Number.isInteger(batchSummary?.[key]?.processed)
+    );
+    if (isBatchSummary) {
+      if (normalizedPayload.preferences && typeof globalThis !== 'undefined' && globalThis.localStorage) {
+        Object.entries(normalizedPayload.preferences).forEach(([key, value]) => {
+          const normalizedValue = normalizePreferenceValue(value);
+          if (PREFERENCE_KEYS.includes(key) && normalizedValue !== '') {
+            globalThis.localStorage.setItem(key, normalizedValue);
+            notifyPreferenceUpdate(key, normalizedValue);
+          }
+        });
+      }
+
+      onProgress?.('Finalizando importacion...');
+      return batchSummary;
+    }
+  } catch (error) {
+    if (error?.response?.status !== 404) {
+      throw error;
+    }
+  }
+
+  onProgress?.('Importando conductores...');
   const documentToId = await importConductores(conductores, summary);
+  onProgress?.('Importando vehiculos...');
   const plateToId = await importVehiculos(vehiculos, documentToId, summary);
-  await importSoats(soats, plateToId, summary);
-  await importRtms(rtms, plateToId, summary);
+  onProgress?.('Importando documentos...');
+  await Promise.all([
+    importSoats(soats, plateToId, summary),
+    importRtms(rtms, plateToId, summary),
+  ]);
+  onProgress?.('Finalizando importacion...');
 
-  if (sanitizedPayload.preferences && typeof globalThis !== 'undefined' && globalThis.localStorage) {
-    Object.entries(sanitizedPayload.preferences).forEach(([key, value]) => {
+  if (normalizedPayload.preferences && typeof globalThis !== 'undefined' && globalThis.localStorage) {
+    Object.entries(normalizedPayload.preferences).forEach(([key, value]) => {
       const normalizedValue = normalizePreferenceValue(value);
       if (PREFERENCE_KEYS.includes(key) && normalizedValue !== '') {
         globalThis.localStorage.setItem(key, normalizedValue);
+        notifyPreferenceUpdate(key, normalizedValue);
       }
     });
   }
@@ -987,59 +1104,41 @@ export const importOperationalBackup = async (payload) => {
   return summary;
 };
 
-const deleteAllByEndpoint = async (endpoint, records, summaryKey, summary) => {
-  for (const record of records) {
-    const id = record._id || record.id;
-    if (!id) continue;
-
-    try {
-      await api.delete(`${endpoint}/${id}`);
-      summary[summaryKey].processed += 1;
-    } catch (error) {
-      summary[summaryKey].errors += 1;
-      summary.errors.push(
-        `${summaryKey} ${id}: ${error.response?.data?.error || error.message}`
-      );
-    }
-  }
-};
-
-export const resetOperationalData = async (userEmail) => {
+export const resetOperationalData = async (userEmail, { onProgress } = {}) => {
   if (!userEmail) {
     throw new Error('No hay usuario autenticado.');
   }
 
-  const params = { email: userEmail };
+  onProgress?.('Eliminando datos operativos en MongoDB...');
+  await yieldToMainThread();
+  const response = await api.delete('/import/operational', { timeout: 120000 });
+  const deleted = response.data?.deleted || {};
   const summary = {
-    validaciones: { processed: 0, errors: 0 },
-    soats: { processed: 0, errors: 0 },
-    rtms: { processed: 0, errors: 0 },
-    vehiculos: { processed: 0, errors: 0 },
-    conductores: { processed: 0, errors: 0 },
+    validaciones: { processed: Number(deleted.validaciones || 0), errors: 0 },
+    soats: { processed: Number(deleted.soats || 0), errors: 0 },
+    rtms: { processed: Number(deleted.rtms || 0), errors: 0 },
+    vehiculos: { processed: Number(deleted.vehiculos || 0), errors: 0 },
+    conductores: { processed: Number(deleted.conductores || 0), errors: 0 },
+    durationMs: Number(response.data?.durationMs || 0),
     errors: [],
   };
 
-  const [validacionesRes, soatsRes, rtmsRes, vehiculosRes, conductoresRes] = await Promise.all([
-    api.get('/validaciones', { params }),
-    api.get('/soats', { params }),
-    api.get('/rtms', { params }),
-    api.get('/vehiculos', { params }),
-    api.get('/conductores', { params }),
-  ]);
-
-  await deleteAllByEndpoint('/validaciones', toArray(validacionesRes.data), 'validaciones', summary);
-  await deleteAllByEndpoint('/soats', toArray(soatsRes.data), 'soats', summary);
-  await deleteAllByEndpoint('/rtms', toArray(rtmsRes.data), 'rtms', summary);
-  await deleteAllByEndpoint('/vehiculos', toArray(vehiculosRes.data), 'vehiculos', summary);
-  await deleteAllByEndpoint('/conductores', toArray(conductoresRes.data), 'conductores', summary);
-
   if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
-    PREFERENCE_KEYS.forEach((key) => globalThis.localStorage.removeItem(key));
+    PREFERENCE_KEYS.forEach((key) => {
+      globalThis.localStorage.removeItem(key);
+      const defaultValue = key === 'syntix_threshold'
+        ? 15
+        : key === 'syntix_dark_mode'
+          ? false
+          : new Date().toISOString().split('T')[0];
+      notifyPreferenceUpdate(key, defaultValue);
+    });
     Object.keys(globalThis.localStorage)
       .filter((key) => key.startsWith('syntix_onboarding_'))
       .forEach((key) => globalThis.localStorage.removeItem(key));
   }
 
+  onProgress?.('Finalizando restablecimiento...');
   return summary;
 };
 
@@ -1483,8 +1582,11 @@ const getCellValue = (attrs, cellXml, sharedStrings) => {
   return xmlUnescape(valueMatch[1]);
 };
 
-const parseWorksheetRows = (xml = '', sharedStrings = []) => {
+const WORKSHEET_PARSE_YIELD_ROWS = 250;
+
+const parseWorksheetRows = async (xml = '', sharedStrings = []) => {
   const rows = [];
+  let parsedRows = 0;
 
   for (const rowMatch of xml.matchAll(/<(?:\w+:)?row\b[^>]*>([\s\S]*?)<\/(?:\w+:)?row>/g)) {
     const rowValues = [];
@@ -1500,26 +1602,42 @@ const parseWorksheetRows = (xml = '', sharedStrings = []) => {
       rowValues.pop();
     }
     rows.push(rowValues);
+    parsedRows += 1;
+
+    if (parsedRows % WORKSHEET_PARSE_YIELD_ROWS === 0) {
+      await yieldToMainThread();
+    }
   }
 
   return rows;
 };
 
-const rowsToObjects = (rows) => {
+const rowsToObjects = async (rows) => {
   const [headers = [], ...records] = rows;
   const normalizedHeaders = headers.map((header) => {
     const trimmedHeader = String(header || '').trim();
     return EXCEL_HEADER_ALIASES[normalizeFieldName(trimmedHeader)] || trimmedHeader;
   });
+  const objects = [];
 
-  return records
-    .map((row) => normalizedHeaders.reduce((acc, header, index) => {
+  for (let recordIndex = 0; recordIndex < records.length; recordIndex += 1) {
+    const row = records[recordIndex];
+    const record = normalizedHeaders.reduce((acc, header, index) => {
       if (header) {
         acc[header] = row[index] ?? '';
       }
       return acc;
-    }, {}))
-    .filter((record) => Object.values(record).some((value) => String(value ?? '').trim() !== ''));
+    }, {});
+
+    if (Object.values(record).some((value) => String(value ?? '').trim() !== '')) {
+      objects.push(record);
+    }
+    if ((recordIndex + 1) % WORKSHEET_PARSE_YIELD_ROWS === 0) {
+      await yieldToMainThread();
+    }
+  }
+
+  return objects;
 };
 
 const parseWorkbookSheets = (entries) => {
@@ -1548,8 +1666,14 @@ const parseWorkbookSheets = (entries) => {
   });
 };
 
-const payloadFromExcelRows = (rowsBySheet) => {
-  const preferences = rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.preferences] || [])
+const payloadFromExcelRows = async (rowsBySheet) => {
+  const preferencesRows = await rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.preferences] || []);
+  const vehiculos = await rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.vehiculos] || []);
+  const conductores = await rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.conductores] || []);
+  const soats = await rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.soats] || []);
+  const rtms = await rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.rtms] || []);
+  const validaciones = await rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.validaciones] || []);
+  const preferences = preferencesRows
     .reduce((acc, record) => {
       const key = String(record.clave || '').trim();
       if (PREFERENCE_KEYS.includes(key)) {
@@ -1561,24 +1685,26 @@ const payloadFromExcelRows = (rowsBySheet) => {
   return normalizeBackupPayload({
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    vehiculos: rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.vehiculos] || []),
-    conductores: rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.conductores] || []),
-    soats: rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.soats] || []).map((record) => ({
+    vehiculos,
+    conductores,
+    soats: soats.map((record) => ({
       ...record,
       placaVehiculo: record.placa,
     })),
-    rtms: rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.rtms] || []).map((record) => ({
+    rtms: rtms.map((record) => ({
       ...record,
       placaVehiculo: record.placa,
     })),
-    validaciones: rowsToObjects(rowsBySheet[EXCEL_SHEET_NAMES.validaciones] || []),
+    validaciones,
     preferences,
     notes: BACKUP_NOTES,
   });
 };
 
 export const parseExcelBackup = async (arrayBuffer) => {
+  const parseStartedAt = performanceNow();
   const entries = await unzipEntries(arrayBuffer);
+  await yieldToMainThread();
   const sheets = parseWorkbookSheets(entries);
   const rowsBySheet = {};
   const sharedStrings = parseSharedStrings(entries['xl/sharedStrings.xml']);
@@ -1590,11 +1716,18 @@ export const parseExcelBackup = async (arrayBuffer) => {
     }
   });
 
-  sheets.forEach((sheet) => {
-    rowsBySheet[sheet.name] = parseWorksheetRows(entries[sheet.path], sharedStrings);
-  });
+  for (const sheet of sheets) {
+    const sheetStartedAt = performanceNow();
+    rowsBySheet[sheet.name] = await parseWorksheetRows(entries[sheet.path], sharedStrings);
+    logImportTiming(`parseo hoja ${sheet.name}`, sheetStartedAt);
+    await yieldToMainThread();
+  }
 
-  return payloadFromExcelRows(rowsBySheet);
+  const transformStartedAt = performanceNow();
+  const payload = await payloadFromExcelRows(rowsBySheet);
+  logImportTiming('transformacion Excel', transformStartedAt);
+  logImportTiming('parseo Excel', parseStartedAt);
+  return payload;
 };
 
 export const downloadExcelBackup = (payload, fileName = buildBackupFileName(new Date(), 'xlsx')) => {

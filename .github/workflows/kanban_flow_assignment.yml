@@ -1,4 +1,4 @@
-name: "Kanban 1 - Flujo y Asignación Dinámica"
+name: "Kanban 1 - Flow Assignment"
 on:
   issues:
     # Apenas nace una issue, se automatiza la logística mínima del tablero.

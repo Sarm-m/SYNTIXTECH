@@ -48,15 +48,16 @@ export default function Header({ toggleSidebar }) {
         <button
           type="button"
           onClick={startTour}
-          className={`hidden md:inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-xs font-semibold transition-colors md:h-auto md:w-auto md:gap-2 md:px-3 md:py-2 ${
             isDarkMode
               ? 'border-slate-700 text-slate-200 hover:bg-slate-800'
               : 'border-white/15 text-gray-200 hover:bg-white/10'
           }`}
           title="Abrir tutorial"
+          aria-label="Abrir tutorial"
         >
-          <Sparkles className="w-4 h-4" />
-          Tutorial
+          <Sparkles className="h-4 w-4 shrink-0" />
+          <span className="hidden md:inline">Tutorial</span>
         </button>
         {/* El centro de alertas conserva acceso rápido desde cualquier módulo. */}
         <button

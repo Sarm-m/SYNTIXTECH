@@ -1,4 +1,4 @@
-name: Notificar Discord
+name: Discord Notification
 
 on:
   workflow_call:
@@ -11,21 +11,38 @@ on:
         type: string
     secrets:
       DISCORD_WEBHOOK_URL:
-        required: true
+        required: false
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Enviar notificacion a Discord
+      - name: Send Discord notification
+        continue-on-error: true
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "::notice::DISCORD_WEBHOOK_URL is not configured. Skipping Discord notification."
+            exit 0
+          fi
+
           if [ "${{ inputs.status }}" = "success" ]; then
             COLOR=3066993
-            MENSAJE="exitosa"
+            MESSAGE="succeeded"
           else
             COLOR=15158332
-            MENSAJE="fallida"
+            MESSAGE="failed"
           fi
-          curl -s -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"$EMOJI Pipeline $MENSAJE\",\"description\":\"**Workflow:** ${{ inputs.workflow_name }}\n**Rama:** ${{ github.ref_name }}\n**Commit:** [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})\n**Por:** ${{ github.actor }}\",\"color\":$COLOR}]}" \
-            "${{ secrets.DISCORD_WEBHOOK_URL }}"
+          PAYLOAD=$(printf '{"embeds":[{"title":"Pipeline %s","description":"**Workflow:** %s\n**Branch:** %s\n**Commit:** [%s](https://github.com/%s/commit/%s)\n**Actor:** %s","color":%s}]}' \
+            "$MESSAGE" \
+            "${{ inputs.workflow_name }}" \
+            "${{ github.ref_name }}" \
+            "${{ github.sha }}" \
+            "${{ github.repository }}" \
+            "${{ github.sha }}" \
+            "${{ github.actor }}" \
+            "$COLOR")
+          if ! curl -fsS -H "Content-Type: application/json" -d "$PAYLOAD" "$DISCORD_WEBHOOK_URL"; then
+            echo "::notice::Discord notification failed; continuing without failing the workflow."
+          fi

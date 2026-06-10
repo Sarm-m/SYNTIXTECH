@@ -5,8 +5,58 @@ import { spawnSync } from 'node:child_process';
 const webDir = process.cwd();
 const backendDir = path.resolve(webDir, '../../backend');
 const envPath = path.join(backendDir, '.env');
+const webNodeModulesPath = path.join(webDir, 'node_modules');
 const backendNodeModulesPath = path.join(backendDir, 'node_modules');
 const backendPackageJsonPath = path.join(backendDir, 'package.json');
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+const getRollupNativePackage = () => {
+  const { platform, arch } = process;
+
+  if (platform === 'win32' && arch === 'x64') return '@rollup/rollup-win32-x64-msvc';
+  if (platform === 'linux' && arch === 'x64') return '@rollup/rollup-linux-x64-gnu';
+  if (platform === 'linux' && arch === 'arm64') return '@rollup/rollup-linux-arm64-gnu';
+  if (platform === 'darwin' && arch === 'x64') return '@rollup/rollup-darwin-x64';
+  if (platform === 'darwin' && arch === 'arm64') return '@rollup/rollup-darwin-arm64';
+
+  return null;
+};
+
+const installDependencies = (cwd, label) => {
+  console.log(`[prepare-dev] Dependencias faltantes en ${label}. Instalando...`);
+  const installResult = spawnSync(npmCommand, ['install'], {
+    cwd,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+
+  if (installResult.status !== 0) {
+    process.exit(installResult.status ?? 1);
+  }
+
+  console.log(`[prepare-dev] Dependencias de ${label} instaladas.`);
+};
+
+const shouldInstallWebDeps = () => {
+  if (!fs.existsSync(webNodeModulesPath)) {
+    return true;
+  }
+
+  const rollupNativePackage = getRollupNativePackage();
+  if (!rollupNativePackage) {
+    return false;
+  }
+
+  const rollupNativePath = path.join(webNodeModulesPath, ...rollupNativePackage.split('/'));
+  if (!fs.existsSync(rollupNativePath)) {
+    console.warn(
+      `[prepare-dev] Falta ${rollupNativePackage}. Esto suele pasar al alternar entre Windows y WSL con el mismo node_modules.`
+    );
+    return true;
+  }
+
+  return false;
+};
 
 const shouldInstallBackendDeps = () => {
   if (!fs.existsSync(backendNodeModulesPath)) {
@@ -38,17 +88,10 @@ if (!fs.existsSync(envPath)) {
   process.exit(1);
 }
 
+if (shouldInstallWebDeps()) {
+  installDependencies(webDir, 'frontend');
+}
+
 if (shouldInstallBackendDeps()) {
-  console.log('[prepare-dev] Dependencias faltantes en backend. Instalando...');
-  const installResult = spawnSync('npm', ['install'], {
-    cwd: backendDir,
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-  });
-
-  if (installResult.status !== 0) {
-    process.exit(installResult.status ?? 1);
-  }
-
-  console.log('[prepare-dev] Dependencias del backend instaladas.');
+  installDependencies(backendDir, 'backend');
 }

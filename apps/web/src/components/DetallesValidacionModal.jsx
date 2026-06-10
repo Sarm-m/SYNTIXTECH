@@ -41,8 +41,8 @@ export default function DetallesValidacionModal({
     : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="max-h-[calc(100vh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100vh-2rem)]">
         {/* Header */}
         <div className="sticky top-0 flex justify-between items-center p-6 border-b border-gray-200 bg-gray-50">
           <div>
@@ -61,7 +61,7 @@ export default function DetallesValidacionModal({
           {/* Información de Auditoría */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <h3 className="font-bold text-blue-900 mb-3">Información de Auditoría</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
               <div>
                 <p className="text-xs font-bold text-blue-700 uppercase">Usuario</p>
                 <p className="text-blue-900 font-bold">{validation.usuario}</p>
@@ -122,7 +122,7 @@ export default function DetallesValidacionModal({
                   <h4 className="font-bold text-syntix-navy">SOAT</h4>
                   <StatusBadge status={soatState} />
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                   <div>
                     <p className="text-xs font-bold text-gray-500 uppercase">Póliza</p>
                     <p className="font-bold text-gray-900">{data.soat.numero}</p>
@@ -152,7 +152,7 @@ export default function DetallesValidacionModal({
                   <h4 className="font-bold text-syntix-navy">RTM (Tecnomecánica)</h4>
                   <StatusBadge status={rtmState} />
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                   <div>
                     <p className="text-xs font-bold text-gray-500 uppercase">Número</p>
                     <p className="font-bold text-gray-900">{data.rtm.numero}</p>

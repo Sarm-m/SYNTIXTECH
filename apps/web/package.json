@@ -13,7 +13,7 @@
     "lint": "eslint . --quiet",
     "lint:warn": "eslint .",
     "quality:metrics": "node tools/generate-quality-evidence.mjs",
-    "test": "sh -c 'vitest run --coverage.enabled=true \"$@\" --coverage.reporter=text --coverage.reporter=lcovonly --coverage.reporter=html' --",
+    "test": "vitest run --coverage.enabled=true --coverage.reporter=text --coverage.reporter=lcovonly --coverage.reporter=html",
     "test:watch": "vitest"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import LoadingProgressOverlay from '@/components/LoadingProgressOverlay.jsx';
 import { Helmet } from 'react-helmet';
 import {
   AlertTriangle,
@@ -19,6 +20,12 @@ import ThemeToggle from '@/components/ThemeToggle.jsx';
 import { useTheme } from '@/contexts/ThemeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import AlertHubSingleton from '@/patterns/singleton/AlertHubSingleton.js';
+import {
+  ALERT_THRESHOLD_MAX,
+  ALERT_THRESHOLD_MIN,
+  isThresholdDraft,
+  validateAlertThreshold,
+} from '@/utils/alertThreshold.js';
 import {
   MAX_BACKUP_FILE_BYTES,
   buildBackupFileName,
@@ -55,6 +62,15 @@ const formatImportSummary = (summary) => [
   `Errores: ${summary.errors.length}`,
 ].join(' | ');
 
+const formatResetSummary = (summary) => [
+  `Vehiculos: ${summary.vehiculos.processed}`,
+  `Conductores: ${summary.conductores.processed}`,
+  `SOAT: ${summary.soats.processed}`,
+  `RTM: ${summary.rtms.processed}`,
+  `Validaciones: ${summary.validaciones.processed}`,
+  `Duracion: ${summary.durationMs}ms`,
+].join(' | ');
+
 const entityPreviewLabels = [
   ['vehiculos', 'Vehiculos'],
   ['conductores', 'Conductores'],
@@ -84,9 +100,21 @@ const dataSteps = [
 ];
 
 const includedEntities = ['Vehiculos', 'Conductores', 'SOAT', 'RTM', 'Validaciones', 'Preferencias'];
+const OPERATIONAL_UPDATED_EVENTS = ['syntix:vehicles-updated', 'syntix:conductors-updated'];
+
+const waitForBrowserPaint = () =>
+  new Promise((resolve) => {
+    if (typeof globalThis.requestAnimationFrame === 'function') {
+      globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(resolve));
+      return;
+    }
+
+    setTimeout(resolve, 0);
+  });
 
 export default function ConfiguracionPage() {
   const [threshold, setThreshold] = useLocalStorage('syntix_threshold', 15);
+  const [thresholdInput, setThresholdInput] = useState(String(threshold));
   const [message, setMessage] = useState({ type: '', text: '' });
   const [activeDataStep, setActiveDataStep] = useState('resumen');
   const [importFormat, setImportFormat] = useState('json');
@@ -94,9 +122,63 @@ export default function ConfiguracionPage() {
   const [importResult, setImportResult] = useState(null);
   const [resetConfirmation, setResetConfirmation] = useState('');
   const [isBusy, setIsBusy] = useState(false);
+  const [busyMessage, setBusyMessage] = useState('');
+  const [busyDone, setBusyDone] = useState(false);
+  const [busyDoneMessage, setBusyDoneMessage] = useState('');
+  const refreshDataOnClose = useRef(false);
   const fileInputRef = useRef(null);
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
+
+  useEffect(() => {
+    setThresholdInput(String(threshold));
+  }, [threshold]);
+
+  const handleThresholdSave = () => {
+    const validation = validateAlertThreshold(thresholdInput);
+    if (!validation.valid) {
+      showMessage('error', validation.message);
+      return;
+    }
+
+    setThreshold(validation.value);
+    setThresholdInput(validation.normalized);
+    showMessage('success', 'Umbral guardado correctamente.');
+  };
+
+  const handleThresholdBlur = () => {
+    const validation = validateAlertThreshold(thresholdInput);
+    if (validation.valid) {
+      setThresholdInput(validation.normalized);
+    }
+  };
+
+  const closeBusyOverlay = () => {
+    setIsBusy(false);
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    setBusyMessage('');
+
+    if (refreshDataOnClose.current) {
+      refreshDataOnClose.current = false;
+      const dispatchRefreshEvents = () => {
+        const refreshStartedAt = globalThis.performance?.now?.() || Date.now();
+        OPERATIONAL_UPDATED_EVENTS.forEach((eventName) => {
+          globalThis.dispatchEvent?.(new Event(eventName));
+        });
+        if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
+          const refreshDurationMs = Math.round((globalThis.performance?.now?.() || Date.now()) - refreshStartedAt);
+          console.info(`[import] refresco final: ${refreshDurationMs}ms`);
+        }
+      };
+
+      if (typeof globalThis.requestAnimationFrame === 'function') {
+        globalThis.requestAnimationFrame(dispatchRefreshEvents);
+      } else {
+        setTimeout(dispatchRefreshEvents, 0);
+      }
+    }
+  };
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -110,6 +192,10 @@ export default function ConfiguracionPage() {
     }
 
     setIsBusy(true);
+    setBusyMessage('Exportando datos...');
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    refreshDataOnClose.current = false;
     try {
       const payload = await exportOperationalBackup(user.email);
       if (format === 'excel') {
@@ -117,11 +203,11 @@ export default function ConfiguracionPage() {
       } else {
         downloadJsonBackup(payload, buildBackupFileName());
       }
-      showMessage('success', `Respaldo ${format === 'excel' ? 'Excel' : 'JSON'} exportado correctamente.`);
+      setBusyDoneMessage(`Respaldo ${format === 'excel' ? 'Excel' : 'JSON'} exportado correctamente.`);
+      setBusyDone(true);
     } catch (error) {
       console.error('Error exportando respaldo.', error);
       showMessage('error', error.message || 'Error al exportar el respaldo.');
-    } finally {
       setIsBusy(false);
     }
   };
@@ -146,14 +232,26 @@ export default function ConfiguracionPage() {
       return;
     }
 
+    setBusyMessage('Validando archivo...');
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    refreshDataOnClose.current = false;
     setIsBusy(true);
     try {
+      await waitForBrowserPaint();
       const format = importFormat === 'excel' || file.name.toLowerCase().endsWith('.xlsx') ? 'excel' : 'json';
       const payload = format === 'excel'
         ? await parseExcelBackup(await file.arrayBuffer())
         : parseJsonBackup(await file.text());
+      await waitForBrowserPaint();
+      const validationStartedAt = globalThis.performance?.now?.() || Date.now();
       const validation = validateBackupPayload(payload);
-      const summary = summarizeBackupPayload(payload);
+      if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
+        const validationDurationMs = Math.round((globalThis.performance?.now?.() || Date.now()) - validationStartedAt);
+        console.info(`[import] validacion de archivo: ${validationDurationMs}ms`);
+      }
+      await waitForBrowserPaint();
+      const summary = summarizeBackupPayload(payload, validation);
 
       setImportPreview({
         fileName: file.name,
@@ -185,22 +283,30 @@ export default function ConfiguracionPage() {
     }
 
     setIsBusy(true);
+    setBusyMessage('Importando datos a MongoDB...');
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    refreshDataOnClose.current = false;
     try {
-      const summary = await importOperationalBackup(importPreview.payload);
+      await waitForBrowserPaint();
+      const summary = await importOperationalBackup(importPreview.payload, {
+        onProgress: setBusyMessage,
+        precomputedValidation: importPreview.validation,
+      });
       setImportResult(summary);
       setImportPreview(null);
       const hasImportErrors = summary.errors.length > 0;
-      showMessage(
-        hasImportErrors ? 'error' : 'success',
-        `${hasImportErrors ? 'Importacion parcial' : 'Respaldo importado'}. ${formatImportSummary(summary)}`
-      );
-      if (!hasImportErrors) {
-        setTimeout(() => globalThis.location.reload(), 1500);
+      const summaryText = formatImportSummary(summary);
+      if (hasImportErrors) {
+        setBusyDoneMessage(`Importacion parcial. ${summaryText}`);
+      } else {
+        refreshDataOnClose.current = true;
+        setBusyDoneMessage(`Respaldo importado correctamente. ${summaryText}`);
       }
+      setBusyDone(true);
     } catch (error) {
       console.error('Error importando respaldo.', error);
       showMessage('error', error.message || 'No fue posible importar el respaldo.');
-    } finally {
       setIsBusy(false);
     }
   };
@@ -223,16 +329,23 @@ export default function ConfiguracionPage() {
     }
 
     setIsBusy(true);
+    setBusyMessage('Restableciendo datos...');
+    setBusyDone(false);
+    setBusyDoneMessage('');
+    refreshDataOnClose.current = false;
     try {
-      await resetOperationalData(user.email);
+      await waitForBrowserPaint();
+      const summary = await resetOperationalData(user.email, {
+        onProgress: setBusyMessage,
+      });
       AlertHubSingleton.getInstance().reset();
       setResetConfirmation('');
-      showMessage('success', 'Datos operativos restablecidos. Recargando aplicacion...');
-      setTimeout(() => globalThis.location.reload(), 1500);
+      refreshDataOnClose.current = true;
+      setBusyDoneMessage(`Datos operativos restablecidos correctamente. ${formatResetSummary(summary)}`);
+      setBusyDone(true);
     } catch (error) {
       console.error('Error restableciendo datos.', error);
       showMessage('error', error.message || 'No fue posible restablecer los datos.');
-    } finally {
       setIsBusy(false);
     }
   };
@@ -247,7 +360,17 @@ export default function ConfiguracionPage() {
   const primaryButtonClass = 'bg-syntix-navy text-white hover:bg-syntix-navy/90';
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <>
+      {isBusy && busyMessage && (
+        <LoadingProgressOverlay
+          message={busyMessage}
+          done={busyDone}
+          doneMessage={busyDoneMessage}
+          onClose={closeBusyOverlay}
+        />
+      )}
+
+      <div className="space-y-6 max-w-4xl">
       <Helmet>
         <title>Configuracion | SYNTIX Drive Control</title>
       </Helmet>
@@ -281,23 +404,28 @@ export default function ConfiguracionPage() {
             <div className="flex gap-4">
               <input
                 id="settings-threshold-input"
-                type="number"
-                value={threshold}
-                onChange={(event) => setThreshold(Number(event.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={thresholdInput}
+                onChange={(event) => {
+                  if (isThresholdDraft(event.target.value)) {
+                    setThresholdInput(event.target.value);
+                  }
+                }}
+                onBlur={handleThresholdBlur}
                 className={`w-full rounded-lg border px-4 py-2 outline-none focus:ring-2 focus:ring-syntix-green ${
                   isDarkMode
                     ? 'border-slate-700 bg-slate-950 text-slate-100'
                     : 'border-gray-300 bg-white text-gray-900'
                 }`}
-                min="1"
-                max="60"
+                aria-describedby="settings-threshold-help"
               />
-              <button data-onboarding="settings-save-button" onClick={() => showMessage('success', 'Umbral guardado correctamente.')} className="bg-syntix-navy text-white px-4 py-2 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2">
+              <button data-onboarding="settings-save-button" onClick={handleThresholdSave} className="bg-syntix-navy text-white px-4 py-2 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2">
                 <Save className="w-4 h-4" /> Guardar
               </button>
             </div>
-            <p className={`mt-2 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-              Los documentos se marcaran en amarillo cuando falten {threshold} dias o menos para su vencimiento.
+            <p id="settings-threshold-help" className={`mt-2 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+              Los documentos se marcaran en amarillo cuando falten {threshold} dias o menos para su vencimiento. Rango permitido: {ALERT_THRESHOLD_MIN} a {ALERT_THRESHOLD_MAX}.
             </p>
           </div>
         </div>
@@ -479,6 +607,7 @@ export default function ConfiguracionPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

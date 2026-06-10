@@ -24,18 +24,16 @@ const alertHub = AlertHubSingleton.getInstance();
 
 let lastAlertsUserEmail = null;
 
-const resolveVehiclePlate = (documento, vehiculos = []) => {
-  const vehiculo = vehiculos.find(
-    (item) => String(documento.vehiculoId) === String(item._id || item.id)
-  );
+const resolveVehiclePlate = (documento, vehicleById = new Map()) => {
+  const vehiculo = vehicleById.get(String(documento.vehiculoId));
 
   const placa = normalizePlate(vehiculo?.placa || documento.placaVehiculo || documento.vehiculoPlaca || documento.placa || '');
 
   return isValidPlate(placa) ? placa : UNKNOWN_VEHICLE_LABEL;
 };
 
-const enrichDocumentWithVehicle = (documento, vehiculos) => {
-  const placa = resolveVehiclePlate(documento, vehiculos);
+const enrichDocumentWithVehicle = (documento, vehicleById) => {
+  const placa = resolveVehiclePlate(documento, vehicleById);
 
   return {
     ...documento,
@@ -75,15 +73,19 @@ export function useAlertsFacade(sortMode = 'priority') {
 
   const isReady = Boolean(user?.email) && hasLoadedOnce;
   const isInitialLoading = isLoading && !hasLoadedOnce;
+  const vehicleById = useMemo(
+    () => new Map(vehiculos.map((vehicle) => [String(vehicle._id || vehicle.id), vehicle])),
+    [vehiculos]
+  );
 
   const enrichedSoats = useMemo(
-    () => soats.map((soat) => enrichDocumentWithVehicle(soat, vehiculos)),
-    [soats, vehiculos]
+    () => soats.map((soat) => enrichDocumentWithVehicle(soat, vehicleById)),
+    [soats, vehicleById]
   );
 
   const enrichedRtms = useMemo(
-    () => rtms.map((rtm) => enrichDocumentWithVehicle(rtm, vehiculos)),
-    [rtms, vehiculos]
+    () => rtms.map((rtm) => enrichDocumentWithVehicle(rtm, vehicleById)),
+    [rtms, vehicleById]
   );
 
   const sourceAlerts = useMemo(() => {

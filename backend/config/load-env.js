@@ -6,27 +6,68 @@ const backendDir = path.resolve(__dirname, '..');
 const repoRootDir = path.resolve(backendDir, '..');
 const backendEnvPath = path.join(backendDir, '.env');
 const backendEnvExamplePath = path.join(backendDir, '.env.example');
-const appsWebEnvPath = path.join(repoRootDir, 'apps', 'web', '.env');
 const rootEnvPath = path.join(repoRootDir, '.env');
+const webEnvPaths = [
+  path.join(repoRootDir, 'apps', 'web', '.env.local'),
+  path.join(repoRootDir, 'apps', 'web', '.env'),
+];
 
 const labelForPath = (filePath) => {
-  // Se devuelven etiquetas legibles para logs de diagnóstico.
   if (filePath === backendEnvPath) return 'backend/.env';
   if (filePath === backendEnvExamplePath) return 'backend/.env.example';
-  if (filePath === appsWebEnvPath) return 'apps/web/.env';
   if (filePath === rootEnvPath) return '.env';
   return path.basename(filePath);
 };
 
-const loadEnvFile = (filePath, { override }) => {
-  // Si el archivo no existe, se omite sin fallar para permitir múltiples combinaciones.
+const isBlankOrPlaceholder = (value) => {
+  const normalized = String(value ?? '').trim();
+  return (
+    !normalized ||
+    normalized === 'your-google-oauth-client-id' ||
+    normalized.includes('<') ||
+    normalized.includes('>')
+  );
+};
+
+const loadEnvFile = (filePath, { override, protectedKeys = new Set() }) => {
   if (!fs.existsSync(filePath)) {
     return null;
   }
 
-  // `override` decide si ese archivo pisa variables cargadas antes.
-  dotenv.config({ path: filePath, override });
+  if (override) {
+    dotenv.config({ path: filePath, override: true });
+    return labelForPath(filePath);
+  }
+
+  const parsed = dotenv.parse(fs.readFileSync(filePath));
+  Object.entries(parsed).forEach(([key, value]) => {
+    const hasProtectedValue = protectedKeys.has(key) && !isBlankOrPlaceholder(process.env[key]);
+    if (!hasProtectedValue) {
+      process.env[key] = value;
+    }
+  });
+
   return labelForPath(filePath);
+};
+
+const loadFrontendGoogleClientId = () => {
+  if (process.env.NODE_ENV === 'production' || !isBlankOrPlaceholder(process.env.GOOGLE_CLIENT_ID)) {
+    return null;
+  }
+
+  for (const webEnvPath of webEnvPaths) {
+    if (!fs.existsSync(webEnvPath)) continue;
+
+    const parsed = dotenv.parse(fs.readFileSync(webEnvPath));
+    const googleClientId = String(parsed.GOOGLE_CLIENT_ID || parsed.VITE_GOOGLE_CLIENT_ID || '').trim();
+
+    if (!isBlankOrPlaceholder(googleClientId)) {
+      process.env.GOOGLE_CLIENT_ID = googleClientId;
+      return `${path.relative(repoRootDir, webEnvPath).replace(/\\/g, '/')} (GOOGLE_CLIENT_ID publico)`;
+    }
+  }
+
+  return null;
 };
 
 const loadProjectEnv = ({ explicitEnvFile = null } = {}) => {
@@ -37,35 +78,33 @@ const loadProjectEnv = ({ explicitEnvFile = null } = {}) => {
   const loadedFrom = [];
 
   if (explicitEnvFile) {
-    // En modo explícito solo se carga ese archivo, útil para scripts de diagnóstico.
     const envPath = path.resolve(backendDir, explicitEnvFile);
     const label = loadEnvFile(envPath, { override: true });
     return label ? [label] : [];
   }
 
-  const fallbackLabel = loadEnvFile(backendEnvExamplePath, { override: false });
-  if (fallbackLabel) {
-    // `.env.example` aporta defaults seguros si aún no existe `.env` real.
-    loadedFrom.push(fallbackLabel);
+  const processKeys = new Set(Object.keys(process.env));
+
+  const rootLabel = loadEnvFile(rootEnvPath, { override: false, protectedKeys: processKeys });
+  if (rootLabel) {
+    loadedFrom.push(rootLabel);
   }
 
-  const appsWebLabel = loadEnvFile(appsWebEnvPath, { override: true });
-  if (appsWebLabel) {
-    // El proyecto academico conserva variables compartidas en apps/web/.env.
-    // Se carga sin imprimir valores para que backend local pueda leer Twilio/Mongo/SMTP.
-    loadedFrom.push(appsWebLabel);
-  }
-
-  const backendLabel = loadEnvFile(backendEnvPath, { override: true });
+  const backendLabel = loadEnvFile(backendEnvPath, { override: false, protectedKeys: processKeys });
   if (backendLabel) {
-    // `backend/.env` tiene prioridad sobre el example.
     loadedFrom.push(backendLabel);
   }
 
-  const rootLabel = loadEnvFile(rootEnvPath, { override: true });
-  if (rootLabel) {
-    // El `.env` raíz se carga al final para facilitar despliegues desde la raíz del repo.
-    loadedFrom.push(rootLabel);
+  if (loadedFrom.length === 0 && process.env.NODE_ENV !== 'production') {
+    const fallbackLabel = loadEnvFile(backendEnvExamplePath, { override: false, protectedKeys: processKeys });
+    if (fallbackLabel) {
+      loadedFrom.push(fallbackLabel);
+    }
+  }
+
+  const frontendGoogleLabel = loadFrontendGoogleClientId();
+  if (frontendGoogleLabel) {
+    loadedFrom.push(frontendGoogleLabel);
   }
 
   return loadedFrom;
@@ -73,7 +112,6 @@ const loadProjectEnv = ({ explicitEnvFile = null } = {}) => {
 
 module.exports = {
   backendDir,
-  appsWebEnvPath,
   backendEnvExamplePath,
   backendEnvPath,
   rootEnvPath,

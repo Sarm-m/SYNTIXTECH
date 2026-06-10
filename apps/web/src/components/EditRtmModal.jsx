@@ -122,8 +122,8 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="document-modal bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="document-modal max-h-[calc(100vh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100vh-2rem)]">
         <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
           <h2 className="text-xl font-bold text-syntix-navy flex items-center gap-2">
             <Wrench className="w-5 h-5" />
@@ -134,7 +134,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4 p-4 sm:p-6">
           {error && (
             <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
               {error}
@@ -226,7 +226,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
             />
           </div>
 
-          <div className="pt-4 flex justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
             <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg">
               Cancelar
             </button>

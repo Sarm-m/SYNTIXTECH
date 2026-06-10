@@ -40,9 +40,7 @@ export function useVehicles() {
 
     setIsLoading(true);
     try {
-      const res = await api.get('/vehiculos', {
-        params: { email: user.email },
-      });
+      const res = await api.get('/vehiculos');
 
       setVehiculos(res.data.map(normalizeVehicle));
     } catch (err) {
@@ -121,36 +119,40 @@ export function useVehicles() {
     return normalizeVehicle(response.data);
   };
 
-  const vehiculosCompletos = useMemo(() => vehiculos.map((vehiculo) => {
-    // Aquí se arma la visión "enriquecida" que consumen las pantallas:
-    // vehículo + conductor + documentos + severidad consolidada.
-    const conductor = conductores.find(
-      (item) => String(item.id) === String(vehiculo.conductorId)
-    );
-    const soat = soats.find((item) => String(item.vehiculoId) === String(vehiculo.id));
-    const rtm = rtms.find((item) => String(item.vehiculoId) === String(vehiculo.id));
-    const estadoConductor = vehiculo.conductorId ? conductor?.estado || 'rojo' : 'rojo';
-    const estadoSoat = soat?.estado || 'rojo';
-    const estadoRtm = rtm?.estado || 'rojo';
+  const vehiculosCompletos = useMemo(() => {
+    const conductorById = new Map(conductores.map((item) => [String(item.id), item]));
+    const soatByVehicleId = new Map(soats.map((item) => [String(item.vehiculoId), item]));
+    const rtmByVehicleId = new Map(rtms.map((item) => [String(item.vehiculoId), item]));
 
-    const estadoGeneral = getWorstState(getWorstState(estadoConductor, estadoSoat), estadoRtm);
-    const vehicleWithState = {
-      ...vehiculo,
-      conductor,
-      soat,
-      rtm,
-      ownerLabel: vehiculo.ownerEmpresa || user?.empresa || vehiculo.ownerEmail || 'Sin dato',
-      estadoGeneral,
-    };
-    const statusSummary = getVehicleStatusSummary(vehicleWithState);
+    return vehiculos.map((vehiculo) => {
+      // Aquí se arma la visión "enriquecida" que consumen las pantallas:
+      // vehículo + conductor + documentos + severidad consolidada.
+      const conductor = conductorById.get(String(vehiculo.conductorId));
+      const soat = soatByVehicleId.get(String(vehiculo.id));
+      const rtm = rtmByVehicleId.get(String(vehiculo.id));
+      const estadoConductor = vehiculo.conductorId ? conductor?.estado || 'rojo' : 'rojo';
+      const estadoSoat = soat?.estado || 'rojo';
+      const estadoRtm = rtm?.estado || 'rojo';
 
-    return {
-      ...vehicleWithState,
-      estadoRazon: statusSummary.reason,
-      estadoRazones: statusSummary.reasons,
-      estadoLabel: statusSummary.label,
-    };
-  }), [vehiculos, conductores, soats, rtms, user?.empresa]);
+      const estadoGeneral = getWorstState(getWorstState(estadoConductor, estadoSoat), estadoRtm);
+      const vehicleWithState = {
+        ...vehiculo,
+        conductor,
+        soat,
+        rtm,
+        ownerLabel: vehiculo.ownerEmpresa || user?.empresa || vehiculo.ownerEmail || 'Sin dato',
+        estadoGeneral,
+      };
+      const statusSummary = getVehicleStatusSummary(vehicleWithState);
+
+      return {
+        ...vehicleWithState,
+        estadoRazon: statusSummary.reason,
+        estadoRazones: statusSummary.reasons,
+        estadoLabel: statusSummary.label,
+      };
+    });
+  }, [vehiculos, conductores, soats, rtms, user?.empresa]);
 
   return {
     vehiculos: vehiculosCompletos,
