@@ -38,10 +38,16 @@ if (missing.length > 0) {
 
 const mongoErrors = getMongoConfigErrors(process.env);
 const isCiOrNoConnect = ciMode || noConnect;
-// En CI se ignoran placeholders, pero no errores reales de configuración incompleta.
-const nonPlaceholderMongoErrors = mongoErrors.filter((error) => !error.includes('placeholders'));
+// CI valida la estructura sin requerir secretos; fuera de CI se exige configuracion operativa.
+const toleratedCiMongoErrors = new Set(['Falta MONGO_USER', 'Falta MONGO_PASSWORD']);
+const blockingMongoErrors = mongoErrors.filter(
+  (error) =>
+    ciMode
+      ? !error.includes('placeholders') && !toleratedCiMongoErrors.has(error)
+      : !error.includes('placeholders')
+);
 
-if (nonPlaceholderMongoErrors.length > 0) {
+if (blockingMongoErrors.length > 0) {
   console.error(
     `[AUTH-DOCTOR] Configuracion Mongo incompleta. Usa MONGO_URI o define MONGO_USER/MONGO_PASSWORD para ${DEFAULT_MONGO_HOST}/${DEFAULT_MONGO_DB_NAME}.`
   );
@@ -87,6 +93,7 @@ const hasPlaceholderCredentials =
   hasPlaceholderValue(process.env.MONGO_URI) ||
   hasPlaceholderValue(process.env.MONGO_USER) ||
   hasPlaceholderValue(process.env.MONGO_PASSWORD);
+const hasIncompleteCiMongoConfig = ciMode && mongoErrors.length > 0;
 
 const lookupHosts = async () => {
   if (isSrvUri) {
@@ -175,10 +182,10 @@ const testMongoConnection = async () => {
 };
 
 (async () => {
-  if (hasPlaceholderHosts || hasPlaceholderCredentials) {
+  if (hasPlaceholderHosts || hasPlaceholderCredentials || hasIncompleteCiMongoConfig) {
     // En CI/no-connect se permite seguir porque el objetivo es validar estructura, no secretos reales.
     if (isCiOrNoConnect) {
-      console.log('[AUTH-DOCTOR] Se detectaron placeholders en la configuracion Mongo. Se omite DNS en modo CI/no-connect.');
+      console.log('[AUTH-DOCTOR] Configuracion Mongo no operativa para CI. Se omite DNS en modo CI/no-connect.');
     } else {
       console.error('[AUTH-DOCTOR] La configuracion Mongo contiene placeholders. Reemplaza las credenciales reales antes de conectar.');
       process.exit(1);
