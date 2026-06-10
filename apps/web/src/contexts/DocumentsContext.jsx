@@ -42,7 +42,7 @@ export function DocumentsProvider({ children }) {
     }
     setLoading(true);
     try {
-      const res = await api.get('/soats', { params: { email: user.email } });
+      const res = await api.get('/soats');
       setStoredSoats(res.data.map(normalizeSoat));
     } catch (err) {
       console.error('Error cargando SOATs:', err);

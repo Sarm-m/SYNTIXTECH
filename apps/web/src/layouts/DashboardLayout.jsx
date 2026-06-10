@@ -14,12 +14,12 @@ export default function DashboardLayout() {
   const { isDarkMode } = useTheme();
 
   return (
-    <div className={`flex h-screen overflow-hidden font-sans ${isDarkMode ? 'bg-slate-950' : 'bg-gray-100'}`}>
+    <div className={`dvh-screen flex w-full overflow-hidden overflow-x-hidden font-sans ${isDarkMode ? 'bg-slate-950' : 'bg-gray-100'}`}>
       {/* Cuando el onboarding bloquea interacción, se congela tanto el sidebar
           como el contenido para que el usuario siga el flujo guiado sin desviarse. */}
       <div
         aria-hidden={isInteractionLocked}
-        className={`h-full flex-shrink-0 self-stretch ${isInteractionLocked ? 'pointer-events-none select-none' : ''}`}
+        className={`h-full min-h-0 flex-shrink-0 self-stretch ${isInteractionLocked ? 'pointer-events-none select-none' : ''}`}
       >
         <Sidebar
           isOpen={sidebarOpen}
@@ -29,13 +29,13 @@ export default function DashboardLayout() {
 
       <div
         aria-hidden={isInteractionLocked}
-        className={`flex-1 flex flex-col overflow-hidden ${isInteractionLocked ? 'pointer-events-none select-none' : ''}`}
+        className={`flex min-w-0 flex-1 flex-col overflow-hidden ${isInteractionLocked ? 'pointer-events-none select-none' : ''}`}
       >
         <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
         {/* Outlet renderiza cada módulo protegido dentro del mismo marco visual. */}
-        <main className={`flex-1 overflow-y-auto p-4 lg:p-8 ${isDarkMode ? 'bg-slate-950 text-slate-100' : ''}`}>
-          <div className="max-w-7xl mx-auto">
+        <main className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 lg:p-8 ${isDarkMode ? 'bg-slate-950 text-slate-100' : ''}`}>
+          <div className="mx-auto max-w-7xl">
             <Outlet />
           </div>
         </main>

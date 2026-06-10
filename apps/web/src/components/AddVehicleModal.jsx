@@ -154,12 +154,12 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="safe-area-px safe-area-py fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/60 backdrop-blur-sm sm:items-center">
       <div
         data-onboarding="vehicle-form"
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200"
+        className="flex max-h-[calc(100vh-2rem)] max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200"
       >
-        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
+        <div className="flex shrink-0 justify-between items-center p-5 border-b border-gray-100 bg-gray-50 sm:p-6">
           <h2 className="text-xl font-bold text-syntix-navy flex items-center gap-2">
             <Car className="w-5 h-5" /> {modalTitle}
           </h2>
@@ -172,7 +172,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="min-h-0 overflow-y-auto p-5 space-y-4 sm:p-6">
           {error && (
             <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">
               {error}
@@ -195,7 +195,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
             />
           </div>
 
-          <div data-onboarding="vehicle-brand-model-fields" className="grid grid-cols-2 gap-4">
+          <div data-onboarding="vehicle-brand-model-fields" className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="vehicle-brand" className="block text-sm font-bold text-gray-700 mb-1">Marca</label>
               <input
@@ -222,7 +222,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
             </div>
           </div>
 
-          <div data-onboarding="vehicle-year-type-fields" className="grid grid-cols-2 gap-4">
+          <div data-onboarding="vehicle-year-type-fields" className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="vehicle-year" className="block text-sm font-bold text-gray-700 mb-1">Anio</label>
               <input
@@ -256,7 +256,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
             </div>
           </div>
 
-          <div data-onboarding="vehicle-submit-actions" className="pt-4 flex justify-end gap-3">
+          <div data-onboarding="vehicle-submit-actions" className="sticky bottom-0 -mx-5 flex justify-end gap-3 border-t border-gray-100 bg-white px-5 pb-1 pt-4 sm:-mx-6 sm:px-6">
             <button
               type="button"
               onClick={handleClose}

@@ -31,7 +31,7 @@ NODE_ENV=development
 
 `JWT_SECRET`, `EMAIL_PASS`, `TWILIO_AUTH_TOKEN` y la cadena real de MongoDB son secretos. Deben vivir solo en backend, Docker o el proveedor de despliegue.
 
-El backend carga variables desde `backend/config/load-env.js`. En desarrollo puede leer, en este orden practico, `backend/.env.example`, `apps/web/.env`, `backend/.env` y `.env` de la raiz, sin imprimir valores. Esto conserva el flujo academico existente.
+El backend carga variables desde `backend/config/load-env.js`. Prioriza variables reales del proceso y, para desarrollo local, lee `.env` de la raiz y `backend/.env` sin imprimir valores. Ya no carga `apps/web/.env` para secretos del backend.
 
 ## Frontend publico
 
@@ -62,13 +62,13 @@ make build
 make up
 ```
 
-El `Makefile` usa por defecto:
+Docker Compose usa MongoDB interno por defecto:
 
-```text
-WEB_ENV_FILE=apps/web/.env
+```env
+MONGO_URI=mongodb://mongodb:27017/logistica_db
 ```
 
-Ese archivo local existe por compatibilidad academica y puede alimentar `docker compose` con variables compartidas. No debe subirse con valores reales. `docker-compose.yml` inyecta variables al backend y al build del frontend usando esas variables o valores por defecto seguros para desarrollo.
+Si necesitas valores privados locales, usa `.env` en la raiz o `backend/.env` para backend. El frontend debe quedarse con variables publicas `VITE_*` en `apps/web/.env.local`. Ningun archivo real de entorno debe subirse a Git.
 
 Para revisar la configuracion sin iniciar contenedores:
 

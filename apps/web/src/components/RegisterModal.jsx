@@ -7,6 +7,7 @@ import { authService } from '@/services/api.js';
 import GoogleAuthButton from '@/components/GoogleAuthButton.jsx';
 import { isValidColombianMobile } from '@/utils/colombiaFormats.js';
 import { isValidEmailFormat } from '@/utils/emailValidation.js';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock.js';
 import {
   OTP_LENGTH,
   createEmptyOtp,
@@ -28,6 +29,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingGoogleToken, setPendingGoogleToken] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   // `step` define si estamos rellenando datos, eligiendo canal de OTP, o confirmando el OTP.
   const [step, setStep] = useState('register'); // 'register' | 'chooseChannel' | 'verify'
@@ -46,6 +48,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   const cooldownIntervalRef = useRef(null);
   const webOtpAbortRef = useRef(null);
   const { register, loginAfterVerification, loginWithGoogle } = useAuth();
+  useBodyScrollLock(isOpen);
 
   const clearCooldownTimer = useCallback(() => {
     if (cooldownIntervalRef.current) {
@@ -114,6 +117,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   const handleClose = useCallback(() => {
     abortWebOtpWait();
     clearCooldownTimer();
+    setPendingGoogleToken('');
     onClose();
   }, [abortWebOtpWait, clearCooldownTimer, onClose]);
 
@@ -197,25 +201,6 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   };
 
   const handleGoogleRegister = async (credential) => {
-    // Con Google, empresa y teléfono siguen siendo obligatorios porque no vienen del perfil federado.
-    const empresa = formData.empresa.trim();
-    const telefono = formData.telefono.trim();
-
-    if (!empresa) {
-      setError('Ingresa el nombre de la empresa antes de continuar con Google.');
-      return;
-    }
-
-    if (!telefono) {
-      setError('Ingresa el teléfono antes de continuar con Google.');
-      return;
-    }
-
-    if (!isValidColombianMobile(telefono)) {
-      setError('El celular debe tener 10 digitos e iniciar por 3.');
-      return;
-    }
-
     if (!credential) {
       setError('Google no devolvio un token valido.');
       return;
@@ -225,10 +210,54 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
     setIsSubmitting(true);
 
     try {
-      // El backend decide si la cuenta Google se crea o si simplemente inicia sesión.
-      const res = await loginWithGoogle({ idToken: credential, empresa, telefono });
+      // El backend consulta primero el correo y decide si inicia sesión o requiere completar registro.
+      const res = await loginWithGoogle({
+        idToken: credential,
+        empresa: formData.empresa.trim(),
+        telefono: formData.telefono.trim(),
+      });
       if (res.success) {
-        // Solo se cola onboarding si realmente fue una cuenta nueva.
+        if (res.created && res.user?.email) {
+          queueOnboardingForUser(res.user.email);
+        }
+        handleClose();
+      } else if (res.mode === 'register' && (res.requiresCompanyName || res.requiresPhone)) {
+        setPendingGoogleToken(credential);
+        setError('Esta cuenta de Google es nueva. Completa empresa y teléfono para crearla.');
+      } else {
+        setError(res.message || 'No se pudo completar el registro con Google.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleComplete = async () => {
+    const empresa = formData.empresa.trim();
+    const telefono = formData.telefono.trim();
+
+    if (!empresa) {
+      setError('Ingresa el nombre de la empresa para completar el registro con Google.');
+      return;
+    }
+    if (!telefono) {
+      setError('Ingresa el teléfono para completar el registro con Google.');
+      return;
+    }
+    if (!isValidColombianMobile(telefono)) {
+      setError('El celular debe tener 10 digitos e iniciar por 3.');
+      return;
+    }
+
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const res = await loginWithGoogle({
+        idToken: pendingGoogleToken,
+        empresa,
+        telefono,
+      });
+      if (res.success) {
         if (res.created && res.user?.email) {
           queueOnboardingForUser(res.user.email);
         }
@@ -370,16 +399,34 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div
+      className="auth-modal-viewport safe-area-px safe-area-py fixed inset-0 z-[90] box-border flex items-start justify-center overflow-hidden bg-black/60 backdrop-blur-sm sm:items-center"
+      onClick={handleClose}
+      role="presentation"
+    >
+      <div
+        data-scroll-lock-allow="true"
+        className="ios-touch-scroll auth-modal-scroll max-h-full w-full max-w-md overflow-y-auto overflow-x-hidden overscroll-contain rounded-xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="register-modal-title"
+      >
 
         {step === 'register' && (
           <>
-            <div className="flex justify-between items-center p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-syntix-navy">Crear Cuenta</h2>
-              <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-6 h-6" /></button>
+            <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white p-5 sm:p-6">
+              <h2 id="register-modal-title" className="text-2xl font-bold text-syntix-navy">Crear Cuenta</h2>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Cerrar registro"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 p-5 sm:p-6">
               {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
               {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
               <div>
@@ -436,13 +483,22 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                 <GoogleAuthButton
                   // El botón usa el mismo proveedor global configurado en main.jsx.
                   onSuccess={handleGoogleRegister}
-                  onError={() => setError('No se pudo completar el registro con Google.')}
+                  onError={(message) => setError(message || 'No se pudo completar el registro con Google.')}
                   disabled={isSubmitting}
                   text="signup_with"
                 />
+                {pendingGoogleToken && (
+                  <button
+                    type="button"
+                    onClick={handleGoogleComplete}
+                    disabled={isSubmitting}
+                    className="w-full rounded-lg bg-syntix-navy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-syntix-navy/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Completando registro...' : 'Completar registro con Google'}
+                  </button>
+                )}
                 <p className="text-center text-xs text-gray-500">
-                  {/* Se explica por qué Google no elimina por completo el formulario del registro. */}
-                  Google aporta el correo verificado; empresa y teléfono siguen siendo obligatorios para crear la cuenta.
+                  Si tu cuenta ya existe, entrarás directamente. Para una cuenta nueva pediremos empresa y teléfono.
                 </p>
               </div>
 
@@ -455,14 +511,21 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
 
         {step === 'chooseChannel' && (
           <>
-            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+            <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white p-5 sm:p-6">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-6 h-6 text-syntix-green" />
-                <h2 className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
+                <h2 id="register-modal-title" className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
               </div>
-              <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-6 h-6" /></button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Cerrar verificacion"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <div className="p-6 space-y-5">
+            <div className="space-y-5 p-5 sm:p-6">
               {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
               {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
 
@@ -487,7 +550,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                   </div>
                   <div className="text-center">
                     <p className="font-semibold text-sm text-gray-800 group-hover:text-syntix-green transition-colors">Correo</p>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[100px]">{pendingEmail}</p>
+                    <p className="mt-0.5 max-w-full break-all text-xs text-gray-500 sm:max-w-[100px] sm:truncate">{pendingEmail}</p>
                   </div>
                 </button>
 
@@ -521,14 +584,21 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
 
         {step === 'verify' && (
           <>
-            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+            <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white p-5 sm:p-6">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-6 h-6 text-syntix-green" />
-                <h2 className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
+                <h2 id="register-modal-title" className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
               </div>
-              <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-6 h-6" /></button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Cerrar verificacion"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <form onSubmit={handleVerify} className="p-6 space-y-6">
+            <form onSubmit={handleVerify} className="space-y-6 p-5 sm:p-6">
               <div className="text-center">
                 {otpChannel === 'sms' ? (
                   <>
@@ -547,7 +617,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
 
               {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
 
-              <div className="flex justify-center gap-3">
+              <div className="grid grid-cols-6 gap-2 sm:gap-3">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -562,7 +632,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                     onChange={e => handleOtpChange(index, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(index, e)}
                     onPaste={handleOtpPaste}
-                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-syntix-navy"
+                    className="h-12 min-w-0 rounded-lg border-2 border-gray-300 text-center text-lg font-bold text-syntix-navy outline-none focus:border-syntix-green focus:ring-2 focus:ring-syntix-green sm:h-14 sm:text-2xl"
                   />
                 ))}
               </div>

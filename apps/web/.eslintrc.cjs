@@ -21,7 +21,7 @@ module.exports = {
   // Se parte de reglas recomendadas y luego se relajan solo las que hoy bloquearían el taller.
   extends: ["eslint:recommended", "plugin:react/recommended", "plugin:react-hooks/recommended"],
   plugins: ["react", "react-hooks"],
-  ignorePatterns: ["dist/", "node_modules/"],
+  ignorePatterns: ["coverage/", "dist/", "node_modules/"],
   rules: {
     // React 17+ no requiere importar React en cada archivo JSX.
     "react/react-in-jsx-scope": "off",

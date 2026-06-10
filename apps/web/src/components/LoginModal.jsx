@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 import { authService } from '@/services/api.js';
 import GoogleAuthButton from '@/components/GoogleAuthButton.jsx';
 import { isValidEmailFormat } from '@/utils/emailValidation.js';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock.js';
 
 const getDigitsOnly = (value) =>
   Array.from(String(value ?? ''))
@@ -49,6 +50,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   // Se usa un único flag para deshabilitar envíos simultáneos.
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, loginWithGoogle } = useAuth();
+  useBodyScrollLock(isOpen);
 
   // El modal se desmonta por completo cuando no está abierto.
   if (!isOpen) return null;
@@ -119,8 +121,8 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
       } else {
         // Si el backend pide empresa/teléfono, guardamos el token y pedimos esos datos.
         const needsExtra =
-          res.message?.toLowerCase().includes('empresa') ||
-          res.message?.toLowerCase().includes('tel');
+          res.mode === 'register' &&
+          (res.requiresCompanyName || res.requiresPhone);
         if (needsExtra) {
           setPendingGoogleToken(credential);
           setGoogleEmpresa('');
@@ -272,30 +274,46 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="flex justify-between items-center p-6 border-b border-gray-100">
+    <div
+      className="auth-modal-viewport safe-area-px safe-area-py fixed inset-0 z-[90] box-border flex items-start justify-center overflow-hidden bg-black/60 backdrop-blur-sm sm:items-center"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        data-scroll-lock-allow="true"
+        className="ios-touch-scroll auth-modal-scroll max-h-full w-full max-w-md overflow-y-auto overflow-x-hidden overscroll-contain rounded-xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-modal-title"
+      >
+        <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white p-5 sm:p-6">
           <div className="flex items-center gap-2">
             {mode !== 'login' && (
               <button
                 type="button"
                 onClick={goToLogin}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
                 aria-label="Volver a iniciar sesion"
                 title="Volver"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
-            <h2 className="text-2xl font-bold text-syntix-navy">{titleByMode[mode]}</h2>
+            <h2 id="login-modal-title" className="text-2xl font-bold text-syntix-navy">{titleByMode[mode]}</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            aria-label="Cerrar inicio de sesion"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {mode === 'login' && (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 p-5 sm:p-6">
             {/* Error de negocio o validación del backend/local fallback. */}
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             {/* Aviso positivo como recuperación completada o código enviado. */}
@@ -357,7 +375,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
               <GoogleAuthButton
                 // El modal solo transforma el credential de Google en login federado del contexto.
                 onSuccess={handleGoogleLogin}
-                onError={() => setError('No se pudo completar la autenticacion con Google.')}
+                onError={(message) => setError(message || 'No se pudo completar la autenticacion con Google.')}
                 disabled={isSubmitting}
                 text="signin_with"
               />
@@ -370,7 +388,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         )}
 
         {mode === 'recover' && (
-          <form onSubmit={handleRecoverSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleRecoverSubmit} className="space-y-4 p-5 sm:p-6">
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
             <div>
@@ -391,7 +409,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         )}
 
         {mode === 'chooseChannel' && (
-          <div className="p-6 space-y-5">
+          <div className="space-y-5 p-5 sm:p-6">
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
 
@@ -448,7 +466,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         )}
 
         {mode === 'googleComplete' && (
-          <form onSubmit={handleGoogleComplete} className="p-6 space-y-4">
+          <form onSubmit={handleGoogleComplete} className="space-y-4 p-5 sm:p-6">
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             <p className="text-sm text-gray-600">
               Para crear tu cuenta con Google necesitamos estos datos adicionales.
@@ -491,7 +509,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         )}
 
         {mode === 'reset' && (
-          <form onSubmit={handleResetSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleResetSubmit} className="space-y-4 p-5 sm:p-6">
             {error && <div className="p-3 bg-red-50 text-syntix-red text-sm rounded-lg border border-red-100">{error}</div>}
             {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
 
