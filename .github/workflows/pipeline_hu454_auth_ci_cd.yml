@@ -20,6 +20,10 @@ on:
   # Permite ejecutar pruebas manuales desde Actions.
   workflow_dispatch:
 
+concurrency:
+  group: auth-ci-cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

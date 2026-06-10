@@ -8,6 +8,10 @@ on:
     branches: [ "feature-*", "feature/**", "develop", "main" ]
   workflow_dispatch:
 
+concurrency:
+  group: project-verification-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verificacion:
     runs-on: ubuntu-latest
