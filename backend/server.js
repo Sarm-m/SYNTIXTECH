@@ -167,7 +167,7 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -604,6 +604,9 @@ const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key
 const PLATE_REGEX = /^[A-Z]{3}[0-9]{3}$/;
 const CEDULA_REGEX = /^[0-9]{10}$/;
 const COLOMBIAN_MOBILE_REGEX = /^3[0-9]{9}$/;
+const DRIVER_CATEGORIES = new Set(['A1', 'A2', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']);
+const VALIDATION_TYPES = new Set(['SOAT', 'RTM', 'Documentos', 'Revision preventiva']);
+const VALIDATION_STATES = new Set(['Aprobado', 'Pendiente', 'Rechazado']);
 const PROFILE_NAME_MIN = 2;
 const PROFILE_NAME_MAX = 80;
 const PROFILE_EMPRESA_MIN = 2;
@@ -739,6 +742,10 @@ const buildSoatPayload = async (body, ownerEmailFallback = '') => {
 
   if (!isValidDateRange(fechaInicioVigencia, fechaFinVigencia)) {
     return { error: 'La fecha fin de vigencia no puede ser anterior a la fecha de inicio.' };
+  }
+
+  if (!isValidDateRange(fechaExpedicion, fechaFinVigencia)) {
+    return { error: 'La fecha fin de vigencia no puede ser anterior a la fecha de expedicion.' };
   }
 
   const vehiculo = await findOwnedVehicle(vehiculoId, ownerEmail);
@@ -1261,30 +1268,43 @@ app.post('/api/auth/google', async (req, res) => {
     const empresaNormalizada = normalizeText(empresa);
     const telefonoNormalizado = normalizePhone(telefono);
     const nombreNormalizado = normalizeText(googleProfile.name);
-
-    if (telefonoNormalizado && !COLOMBIAN_MOBILE_REGEX.test(telefonoNormalizado)) {
-      return res.status(400).json({
-        message: 'El celular debe tener 10 digitos e iniciar por 3.',
-      });
-    }
+    const googleId = String(googleProfile.sub || '');
 
     let usuario = await Usuario.findOne({ email: emailNormalizado });
+    if (!usuario && googleId) {
+      usuario = await Usuario.findOne({ googleId });
+    }
     let created = false;
 
     if (!usuario) {
+      const requiresCompanyName = !empresaNormalizada;
+      const requiresPhone = !telefonoNormalizado;
+
+      if (requiresCompanyName || requiresPhone) {
+        return res.status(409).json({
+          success: false,
+          message: 'Completa empresa y teléfono para crear tu cuenta con Google.',
+          data: {
+            mode: 'register',
+            requiresCompanyName,
+            requiresPhone,
+          },
+        });
+      }
+
+      if (!COLOMBIAN_MOBILE_REGEX.test(telefonoNormalizado)) {
+        return res.status(400).json({
+          success: false,
+          message: 'El celular debe tener 10 digitos e iniciar por 3.',
+          data: {
+            mode: 'register',
+            requiresCompanyName: false,
+            requiresPhone: true,
+          },
+        });
+      }
+
       // Si no existe cuenta, Google completa un registro verificado en un solo paso.
-      if (!empresaNormalizada) {
-        return res.status(400).json({
-          message: 'Ingresa el nombre de la empresa para completar el registro con Google.',
-        });
-      }
-
-      if (!telefonoNormalizado) {
-        return res.status(400).json({
-          message: 'Ingresa el teléfono para completar el registro con Google.',
-        });
-      }
-
       usuario = new Usuario({
         nombre: nombreNormalizado,
         email: emailNormalizado,
@@ -1294,7 +1314,7 @@ app.post('/api/auth/google', async (req, res) => {
         telefono: telefonoNormalizado,
         hasLocalPassword: false,
         isVerified: true,
-        googleId: String(googleProfile.sub || ''),
+        googleId,
       });
 
       await usuario.save();
@@ -1303,8 +1323,8 @@ app.post('/api/auth/google', async (req, res) => {
       // Si el usuario ya existe, solo rellenamos huecos sin sobreescribir datos ya capturados.
       let shouldSave = false;
 
-      if (!usuario.googleId && googleProfile.sub) {
-        usuario.googleId = String(googleProfile.sub);
+      if (!usuario.googleId && googleId) {
+        usuario.googleId = googleId;
         if (typeof usuario.hasLocalPassword !== 'boolean') {
           usuario.hasLocalPassword = true;
         }
@@ -1321,7 +1341,7 @@ app.post('/api/auth/google', async (req, res) => {
         shouldSave = true;
       }
 
-      if (!usuario.telefono && telefonoNormalizado) {
+      if (!usuario.telefono && COLOMBIAN_MOBILE_REGEX.test(telefonoNormalizado)) {
         usuario.telefono = telefonoNormalizado;
         shouldSave = true;
       }
@@ -1346,6 +1366,9 @@ app.post('/api/auth/google', async (req, res) => {
         user: buildPublicUser(usuario),
         token: generateToken(usuario._id),
         created,
+        mode: created ? 'register' : 'login',
+        requiresCompanyName: false,
+        requiresPhone: false,
       },
     });
   } catch (err) {
@@ -1869,16 +1892,164 @@ app.post('/api/auth/email-change/verify', requireAuth, async (req, res) => {
 
 app.use(['/api/conductores', '/api/vehiculos', '/api/soats', '/api/rtms', '/api/validaciones', '/api/import'], requireAuth);
 
-const IMPORT_BATCH_LIMIT = 1000;
+const IMPORT_MAX_RECORDS_PER_ENTITY = 10000;
+const IMPORT_BULK_CHUNK_SIZE = 500;
+const IMPORT_ENTITY_KEYS = ['conductores', 'vehiculos', 'soats', 'rtms', 'validaciones'];
 
-const importRecords = (value) => Array.isArray(value) ? value.slice(0, IMPORT_BATCH_LIMIT) : [];
+const chunkArray = (items, size = IMPORT_BULK_CHUNK_SIZE) =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, (index + 1) * size)
+  );
+
+const getImportRecords = (body, key) => Array.isArray(body?.[key]) ? body[key] : [];
+
+const getImportLimitError = (body) => {
+  for (const key of IMPORT_ENTITY_KEYS) {
+    if (body?.[key] !== undefined && !Array.isArray(body[key])) {
+      return `La seccion ${key} debe ser un arreglo.`;
+    }
+    if (getImportRecords(body, key).length > IMPORT_MAX_RECORDS_PER_ENTITY) {
+      return `La seccion ${key} supera el maximo de ${IMPORT_MAX_RECORDS_PER_ENTITY} registros.`;
+    }
+  }
+  return '';
+};
+
+const emptyBulkStats = () => ({
+  matched: 0,
+  modified: 0,
+  upserted: 0,
+  inserted: 0,
+  durationMs: 0,
+});
+
+const runBulkWriteInChunks = async (Model, operations) => {
+  const stats = emptyBulkStats();
+  const startedAt = Date.now();
+
+  for (const chunk of chunkArray(operations)) {
+    const result = await Model.bulkWrite(chunk, { ordered: false });
+    stats.matched += Number(result.matchedCount || 0);
+    stats.modified += Number(result.modifiedCount || 0);
+    stats.upserted += Number(result.upsertedCount || 0);
+    stats.inserted += Number(result.insertedCount || 0);
+  }
+
+  stats.durationMs = Date.now() - startedAt;
+  return stats;
+};
+
+const importResult = (received, operations, stats) => ({
+  processed: operations.length,
+  errors: received.length - operations.length,
+  inserted: stats.inserted,
+  updated: stats.modified,
+  upserted: stats.upserted,
+  matched: stats.matched,
+  skipped: received.length - operations.length,
+  durationMs: stats.durationMs,
+});
+
+const buildSoatImportPayload = (record, vehicleByPlate, ownerEmail, ownerEmpresa) => {
+  const placaVehiculo = normalizePlate(record.placaVehiculo || record.vehiculoPlaca || record.placa);
+  const vehiculo = vehicleByPlate.get(placaVehiculo);
+  const numeroPoliza = normalizeDocumentCode(record.numeroPoliza);
+  const aseguradora = normalizeText(record.aseguradora);
+  const fechaExpedicion = normalizeText(record.fechaExpedicion);
+  const fechaInicioVigencia = normalizeText(record.fechaInicioVigencia || record.fechaInicio);
+  const fechaFinVigencia = normalizeText(record.fechaFinVigencia || record.fechaVencimiento);
+
+  if (!vehiculo) return { error: `La placa ${placaVehiculo || '(vacia)'} no existe en Vehiculos.` };
+  if (!numeroPoliza || !aseguradora || !fechaExpedicion || !fechaInicioVigencia || !fechaFinVigencia) {
+    return { error: 'Todos los campos obligatorios del SOAT deben estar completos.' };
+  }
+  if (!DOCUMENT_CODE_REGEX.test(numeroPoliza)) {
+    return { error: 'El numero de poliza debe ser alfanumerico y tener entre 6 y 30 caracteres.' };
+  }
+  if (
+    !isValidDateValue(fechaExpedicion) ||
+    !isValidDateRange(fechaInicioVigencia, fechaFinVigencia) ||
+    !isValidDateRange(fechaExpedicion, fechaFinVigencia)
+  ) {
+    return { error: 'Las fechas del SOAT no son validas.' };
+  }
+
+  return {
+    payload: {
+      vehiculoId: String(vehiculo._id),
+      placaVehiculo,
+      numeroPoliza,
+      aseguradora,
+      fechaExpedicion,
+      fechaInicioVigencia,
+      fechaFinVigencia,
+      fechaInicio: fechaInicioVigencia,
+      fechaVencimiento: fechaFinVigencia,
+      observaciones: normalizeText(record.observaciones),
+      ownerEmail,
+      ownerEmpresa,
+      seedTag: normalizeText(record.seedTag),
+    },
+  };
+};
+
+const buildRtmImportPayload = (record, vehicleByPlate, ownerEmail, ownerEmpresa) => {
+  const placaVehiculo = normalizePlate(record.placaVehiculo || record.vehiculoPlaca || record.placa);
+  const vehiculo = vehicleByPlate.get(placaVehiculo);
+  const numeroCertificado = normalizeDocumentCode(record.numeroCertificado || record.numeroRtm);
+  const cda = normalizeText(record.cda);
+  const fechaExpedicion = normalizeText(record.fechaExpedicion || record.fechaInicio);
+  const fechaVencimiento = normalizeText(record.fechaVencimiento);
+  const resultado = normalizeText(record.resultado || 'Aprobado');
+
+  if (!vehiculo) return { error: `La placa ${placaVehiculo || '(vacia)'} no existe en Vehiculos.` };
+  if (!numeroCertificado || !cda || !fechaExpedicion || !fechaVencimiento) {
+    return { error: 'Todos los campos obligatorios de la RTM deben estar completos.' };
+  }
+  if (!DOCUMENT_CODE_REGEX.test(numeroCertificado)) {
+    return { error: 'El numero de certificado debe ser alfanumerico y tener entre 6 y 30 caracteres.' };
+  }
+  if (!isValidDateRange(fechaExpedicion, fechaVencimiento)) {
+    return { error: 'Las fechas de la RTM no son validas.' };
+  }
+  if (!['Aprobado', 'Rechazado', 'Pendiente'].includes(resultado)) {
+    return { error: 'El resultado de la RTM no es valido.' };
+  }
+
+  return {
+    payload: {
+      vehiculoId: String(vehiculo._id),
+      placaVehiculo,
+      numeroCertificado,
+      numeroRtm: numeroCertificado,
+      cda,
+      nitCda: normalizeText(record.nitCda),
+      fechaExpedicion,
+      fechaInicio: fechaExpedicion,
+      fechaVencimiento,
+      resultado,
+      observaciones: normalizeText(record.observaciones),
+      ownerEmail,
+      ownerEmpresa,
+      seedTag: normalizeText(record.seedTag),
+    },
+  };
+};
 
 app.post('/api/import/operational', async (req, res) => {
+  const startedAt = Date.now();
   try {
+    const limitError = getImportLimitError(req.body);
+    if (limitError) return res.status(400).json({ error: limitError });
+
     const ownerEmail = req.user.email;
     const ownerEmpresa = normalizeText(req.user.empresa);
     const errors = [];
-    const conductores = importRecords(req.body.conductores).map((record, index) => {
+    const received = Object.fromEntries(
+      IMPORT_ENTITY_KEYS.map((key) => [key, getImportRecords(req.body, key)])
+    );
+
+    const conductorOperations = received.conductores.flatMap((record, index) => {
       const payload = {
         nombre: normalizeText(record.nombre),
         documento: normalizeText(record.documento),
@@ -1887,92 +2058,185 @@ app.post('/api/import/operational', async (req, res) => {
         fechaVencimiento: normalizeText(record.fechaVencimiento),
         ownerEmail,
       };
-      if (!payload.nombre || !CEDULA_REGEX.test(payload.documento) || !COLOMBIAN_MOBILE_REGEX.test(payload.telefono) || !payload.fechaVencimiento) {
+      if (!payload.nombre || !CEDULA_REGEX.test(payload.documento) || !COLOMBIAN_MOBILE_REGEX.test(payload.telefono) || !DRIVER_CATEGORIES.has(payload.categoria) || !isValidDateValue(payload.fechaVencimiento)) {
         errors.push(`Conductores fila ${index + 2}: datos invalidos.`);
-        return null;
+        return [];
       }
-      return payload;
-    }).filter(Boolean);
-
-    const insertedConductores = conductores.length
-      ? await Conductor.insertMany(conductores, { ordered: false })
+      return [{
+        updateOne: {
+          filter: { ownerEmail, documento: payload.documento },
+          update: { $set: payload },
+          upsert: true,
+        },
+      }];
+    });
+    const conductorStats = await runBulkWriteInChunks(Conductor, conductorOperations);
+    const importedDocuments = conductorOperations.map((operation) => operation.updateOne.filter.documento);
+    const referencedDocuments = received.vehiculos
+      .map((record) => normalizeText(record.conductorDocumento))
+      .filter(Boolean);
+    const conductorDocumentsToResolve = [...new Set([...importedDocuments, ...referencedDocuments])];
+    const importedConductores = conductorDocumentsToResolve.length
+      ? await executeLeanQuery(Conductor.find({ ownerEmail, documento: { $in: conductorDocumentsToResolve } }))
       : [];
-    const conductorByDocument = new Map(insertedConductores.map((record) => [record.documento, String(record._id)]));
+    const conductorByDocument = new Map(importedConductores.map((record) => [record.documento, String(record._id)]));
 
-    const vehiculos = importRecords(req.body.vehiculos).map((record, index) => {
+    const vehicleOperations = received.vehiculos.flatMap((record, index) => {
       const placa = normalizePlate(record.placa);
       const anio = Number(record.anio);
+      const conductorDocumento = normalizeText(record.conductorDocumento);
+      const conductorId = conductorDocumento ? conductorByDocument.get(conductorDocumento) : null;
       const payload = {
         placa,
         marca: normalizeText(record.marca),
         modelo: normalizeText(record.modelo),
         anio,
         tipo: normalizeText(record.tipo || 'Otro'),
-        conductorId: record.conductorDocumento
-          ? conductorByDocument.get(String(record.conductorDocumento)) || null
-          : null,
+        conductorId,
         ownerEmail,
         ownerEmpresa,
       };
       if (!isValidPlate(placa) || !payload.marca || !payload.modelo || !Number.isInteger(anio) || anio < 1990 || anio > new Date().getFullYear() + 1) {
         errors.push(`Vehiculos fila ${index + 2}: datos invalidos.`);
-        return null;
+        return [];
       }
-      return payload;
-    }).filter(Boolean);
-
-    const insertedVehiculos = vehiculos.length
-      ? await Vehiculo.insertMany(vehiculos, { ordered: false })
+      if (conductorDocumento && !conductorId) {
+        errors.push(`Vehiculos fila ${index + 2}: no existe el conductor ${conductorDocumento}.`);
+        return [];
+      }
+      return [{
+        updateOne: {
+          filter: { ownerEmail, placa },
+          update: { $set: payload },
+          upsert: true,
+        },
+      }];
+    });
+    const vehicleStats = await runBulkWriteInChunks(Vehiculo, vehicleOperations);
+    const importedPlates = vehicleOperations.map((operation) => operation.updateOne.filter.placa);
+    const referencedPlates = [...received.soats, ...received.rtms, ...received.validaciones]
+      .map((record) => normalizePlate(record.placaVehiculo || record.vehiculoPlaca || record.placa))
+      .filter(Boolean);
+    const vehiclePlatesToResolve = [...new Set([...importedPlates, ...referencedPlates])];
+    const importedVehicles = vehiclePlatesToResolve.length
+      ? await executeLeanQuery(Vehiculo.find({ ownerEmail, placa: { $in: vehiclePlatesToResolve } }))
       : [];
-    const vehicleByPlate = new Map(insertedVehiculos.map((record) => [record.placa, String(record._id)]));
+    const vehicleByPlate = new Map(importedVehicles.map((record) => [record.placa, record]));
 
-    const buildDocuments = async (records, builder, label) => {
-      const payloads = [];
-      for (const [index, record] of importRecords(records).entries()) {
-        const placa = normalizePlate(record.placaVehiculo || record.vehiculoPlaca || record.placa);
-        const vehiculoId = vehicleByPlate.get(placa);
-        if (!vehiculoId) {
-          errors.push(`${label} fila ${index + 2}: no existe vehiculo para la placa asociada.`);
-          continue;
-        }
-        const result = await builder({ ...record, vehiculoId, placaVehiculo: placa, ownerEmail, ownerEmpresa }, ownerEmail);
-        if (result.error) {
-          errors.push(`${label} fila ${index + 2}: ${result.error}`);
-        } else {
-          payloads.push(result.payload);
-        }
+    const buildDocumentOperations = (records, builder, label) => records.flatMap((record, index) => {
+      const result = builder(record, vehicleByPlate, ownerEmail, ownerEmpresa);
+      if (result.error) {
+        errors.push(`${label} fila ${index + 2}: ${result.error}`);
+        return [];
       }
-      return payloads;
+      return [{
+        updateOne: {
+          filter: { ownerEmail, vehiculoId: result.payload.vehiculoId },
+          update: { $set: result.payload },
+          upsert: true,
+        },
+      }];
+    });
+
+    const soatOperations = buildDocumentOperations(received.soats, buildSoatImportPayload, 'SOAT');
+    const rtmOperations = buildDocumentOperations(received.rtms, buildRtmImportPayload, 'RTM');
+    const validationOperations = received.validaciones.flatMap((record, index) => {
+      const placa = normalizePlate(record.placa || record.placaVehiculo);
+      const fecha = normalizeText(record.fecha);
+      const tipo = normalizeText(record.tipo);
+      const estado = normalizeText(record.estado);
+      if (
+        !isValidPlate(placa) ||
+        !vehicleByPlate.has(placa) ||
+        !isValidDateValue(fecha) ||
+        !VALIDATION_TYPES.has(tipo) ||
+        !VALIDATION_STATES.has(estado)
+      ) {
+        errors.push(`Validaciones fila ${index + 2}: datos invalidos.`);
+        return [];
+      }
+      const timestamp = new Date(`${fecha}T00:00:00.000Z`);
+      const payload = {
+        placa,
+        timestamp,
+        usuario: ownerEmail,
+        ownerEmail,
+        resultadoRUNT: {
+          tipo,
+          estado,
+        },
+        notas: normalizeText(record.observaciones),
+      };
+      return [{
+        updateOne: {
+          filter: { ownerEmail, placa, timestamp },
+          update: { $set: payload },
+          upsert: true,
+        },
+      }];
+    });
+
+    const [soatStats, rtmStats, validationStats] = await Promise.all([
+      runBulkWriteInChunks(Soat, soatOperations),
+      runBulkWriteInChunks(Rtm, rtmOperations),
+      runBulkWriteInChunks(ValidationHistory, validationOperations),
+    ]);
+    const durationMs = Date.now() - startedAt;
+    const response = {
+      conductores: importResult(received.conductores, conductorOperations, conductorStats),
+      vehiculos: importResult(received.vehiculos, vehicleOperations, vehicleStats),
+      soats: importResult(received.soats, soatOperations, soatStats),
+      rtms: importResult(received.rtms, rtmOperations, rtmStats),
+      validaciones: importResult(received.validaciones, validationOperations, validationStats),
+      errors,
+      durationMs,
     };
 
-    const [soats, rtms] = await Promise.all([
-      buildDocuments(req.body.soats, buildSoatPayload, 'SOAT'),
-      buildDocuments(req.body.rtms, buildRtmPayload, 'RTM'),
-    ]);
-
-    const vehicleIds = [...vehicleByPlate.values()];
-    if (vehicleIds.length) {
-      await Promise.all([
-        Soat.deleteMany({ ownerEmail, vehiculoId: { $in: vehicleIds } }),
-        Rtm.deleteMany({ ownerEmail, vehiculoId: { $in: vehicleIds } }),
-      ]);
+    if (!IS_PRODUCTION && NODE_ENV !== 'test') {
+      console.info('[import/operational]', JSON.stringify({
+        durationMs,
+        received: Object.fromEntries(IMPORT_ENTITY_KEYS.map((key) => [key, received[key].length])),
+        processed: Object.fromEntries(IMPORT_ENTITY_KEYS.map((key) => [key, response[key].processed])),
+      }));
     }
-    await Promise.all([
-      soats.length ? Soat.insertMany(soats, { ordered: false }) : Promise.resolve([]),
-      rtms.length ? Rtm.insertMany(rtms, { ordered: false }) : Promise.resolve([]),
+
+    return res.status(201).json(response);
+  } catch (err) {
+    return res.status(400).json({
+      error: duplicateOrOriginalMessage(err, 'No fue posible completar la importacion masiva.'),
+    });
+  }
+});
+
+app.delete('/api/import/operational', async (req, res) => {
+  const startedAt = Date.now();
+  const ownerEmail = req.user.email;
+
+  try {
+    const [soats, rtms, validaciones] = await Promise.all([
+      Soat.deleteMany({ ownerEmail }),
+      Rtm.deleteMany({ ownerEmail }),
+      ValidationHistory.deleteMany({ ownerEmail }),
+    ]);
+    const [vehiculos, conductores] = await Promise.all([
+      Vehiculo.deleteMany({ ownerEmail }),
+      Conductor.deleteMany({ ownerEmail }),
     ]);
 
-    return res.status(201).json({
-      conductores: { processed: insertedConductores.length, errors: importRecords(req.body.conductores).length - insertedConductores.length },
-      vehiculos: { processed: insertedVehiculos.length, errors: importRecords(req.body.vehiculos).length - insertedVehiculos.length },
-      soats: { processed: soats.length, errors: importRecords(req.body.soats).length - soats.length },
-      rtms: { processed: rtms.length, errors: importRecords(req.body.rtms).length - rtms.length },
-      validaciones: { processed: 0, errors: 0 },
-      errors,
+    return res.json({
+      success: true,
+      deleted: {
+        soats: Number(soats.deletedCount || 0),
+        rtms: Number(rtms.deletedCount || 0),
+        validaciones: Number(validaciones.deletedCount || 0),
+        vehiculos: Number(vehiculos.deletedCount || 0),
+        conductores: Number(conductores.deletedCount || 0),
+      },
+      durationMs: Date.now() - startedAt,
     });
   } catch (err) {
     return res.status(400).json({
-      error: duplicateOrOriginalMessage(err, 'La importacion contiene registros duplicados.'),
+      error: duplicateOrOriginalMessage(err, 'No fue posible restablecer los datos operativos.'),
     });
   }
 });

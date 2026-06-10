@@ -29,6 +29,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingGoogleToken, setPendingGoogleToken] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   // `step` define si estamos rellenando datos, eligiendo canal de OTP, o confirmando el OTP.
   const [step, setStep] = useState('register'); // 'register' | 'chooseChannel' | 'verify'
@@ -116,6 +117,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   const handleClose = useCallback(() => {
     abortWebOtpWait();
     clearCooldownTimer();
+    setPendingGoogleToken('');
     onClose();
   }, [abortWebOtpWait, clearCooldownTimer, onClose]);
 
@@ -199,25 +201,6 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   };
 
   const handleGoogleRegister = async (credential) => {
-    // Con Google, empresa y teléfono siguen siendo obligatorios porque no vienen del perfil federado.
-    const empresa = formData.empresa.trim();
-    const telefono = formData.telefono.trim();
-
-    if (!empresa) {
-      setError('Ingresa el nombre de la empresa antes de continuar con Google.');
-      return;
-    }
-
-    if (!telefono) {
-      setError('Ingresa el teléfono antes de continuar con Google.');
-      return;
-    }
-
-    if (!isValidColombianMobile(telefono)) {
-      setError('El celular debe tener 10 digitos e iniciar por 3.');
-      return;
-    }
-
     if (!credential) {
       setError('Google no devolvio un token valido.');
       return;
@@ -227,10 +210,54 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
     setIsSubmitting(true);
 
     try {
-      // El backend decide si la cuenta Google se crea o si simplemente inicia sesión.
-      const res = await loginWithGoogle({ idToken: credential, empresa, telefono });
+      // El backend consulta primero el correo y decide si inicia sesión o requiere completar registro.
+      const res = await loginWithGoogle({
+        idToken: credential,
+        empresa: formData.empresa.trim(),
+        telefono: formData.telefono.trim(),
+      });
       if (res.success) {
-        // Solo se cola onboarding si realmente fue una cuenta nueva.
+        if (res.created && res.user?.email) {
+          queueOnboardingForUser(res.user.email);
+        }
+        handleClose();
+      } else if (res.mode === 'register' && (res.requiresCompanyName || res.requiresPhone)) {
+        setPendingGoogleToken(credential);
+        setError('Esta cuenta de Google es nueva. Completa empresa y teléfono para crearla.');
+      } else {
+        setError(res.message || 'No se pudo completar el registro con Google.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleComplete = async () => {
+    const empresa = formData.empresa.trim();
+    const telefono = formData.telefono.trim();
+
+    if (!empresa) {
+      setError('Ingresa el nombre de la empresa para completar el registro con Google.');
+      return;
+    }
+    if (!telefono) {
+      setError('Ingresa el teléfono para completar el registro con Google.');
+      return;
+    }
+    if (!isValidColombianMobile(telefono)) {
+      setError('El celular debe tener 10 digitos e iniciar por 3.');
+      return;
+    }
+
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const res = await loginWithGoogle({
+        idToken: pendingGoogleToken,
+        empresa,
+        telefono,
+      });
+      if (res.success) {
         if (res.created && res.user?.email) {
           queueOnboardingForUser(res.user.email);
         }
@@ -460,9 +487,18 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                   disabled={isSubmitting}
                   text="signup_with"
                 />
+                {pendingGoogleToken && (
+                  <button
+                    type="button"
+                    onClick={handleGoogleComplete}
+                    disabled={isSubmitting}
+                    className="w-full rounded-lg bg-syntix-navy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-syntix-navy/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Completando registro...' : 'Completar registro con Google'}
+                  </button>
+                )}
                 <p className="text-center text-xs text-gray-500">
-                  {/* Se explica por qué Google no elimina por completo el formulario del registro. */}
-                  Google aporta el correo verificado; empresa y teléfono siguen siendo obligatorios para crear la cuenta.
+                  Si tu cuenta ya existe, entrarás directamente. Para una cuenta nueva pediremos empresa y teléfono.
                 </p>
               </div>
 

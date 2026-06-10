@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import DinoGameOverlay from '@/components/DinoGameOverlay.jsx';
+import React, { useEffect, useRef, useState } from 'react';
+import LoadingProgressOverlay from '@/components/LoadingProgressOverlay.jsx';
 import { Helmet } from 'react-helmet';
 import {
   AlertTriangle,
@@ -20,6 +20,12 @@ import ThemeToggle from '@/components/ThemeToggle.jsx';
 import { useTheme } from '@/contexts/ThemeContext.jsx';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import AlertHubSingleton from '@/patterns/singleton/AlertHubSingleton.js';
+import {
+  ALERT_THRESHOLD_MAX,
+  ALERT_THRESHOLD_MIN,
+  isThresholdDraft,
+  validateAlertThreshold,
+} from '@/utils/alertThreshold.js';
 import {
   MAX_BACKUP_FILE_BYTES,
   buildBackupFileName,
@@ -54,6 +60,15 @@ const formatImportSummary = (summary) => [
   `SOAT procesados: ${summary.soats.processed}`,
   `RTM procesados: ${summary.rtms.processed}`,
   `Errores: ${summary.errors.length}`,
+].join(' | ');
+
+const formatResetSummary = (summary) => [
+  `Vehiculos: ${summary.vehiculos.processed}`,
+  `Conductores: ${summary.conductores.processed}`,
+  `SOAT: ${summary.soats.processed}`,
+  `RTM: ${summary.rtms.processed}`,
+  `Validaciones: ${summary.validaciones.processed}`,
+  `Duracion: ${summary.durationMs}ms`,
 ].join(' | ');
 
 const entityPreviewLabels = [
@@ -99,6 +114,7 @@ const waitForBrowserPaint = () =>
 
 export default function ConfiguracionPage() {
   const [threshold, setThreshold] = useLocalStorage('syntix_threshold', 15);
+  const [thresholdInput, setThresholdInput] = useState(String(threshold));
   const [message, setMessage] = useState({ type: '', text: '' });
   const [activeDataStep, setActiveDataStep] = useState('resumen');
   const [importFormat, setImportFormat] = useState('json');
@@ -114,6 +130,29 @@ export default function ConfiguracionPage() {
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
 
+  useEffect(() => {
+    setThresholdInput(String(threshold));
+  }, [threshold]);
+
+  const handleThresholdSave = () => {
+    const validation = validateAlertThreshold(thresholdInput);
+    if (!validation.valid) {
+      showMessage('error', validation.message);
+      return;
+    }
+
+    setThreshold(validation.value);
+    setThresholdInput(validation.normalized);
+    showMessage('success', 'Umbral guardado correctamente.');
+  };
+
+  const handleThresholdBlur = () => {
+    const validation = validateAlertThreshold(thresholdInput);
+    if (validation.valid) {
+      setThresholdInput(validation.normalized);
+    }
+  };
+
   const closeBusyOverlay = () => {
     setIsBusy(false);
     setBusyDone(false);
@@ -122,9 +161,22 @@ export default function ConfiguracionPage() {
 
     if (refreshDataOnClose.current) {
       refreshDataOnClose.current = false;
-      OPERATIONAL_UPDATED_EVENTS.forEach((eventName) => {
-        globalThis.dispatchEvent?.(new Event(eventName));
-      });
+      const dispatchRefreshEvents = () => {
+        const refreshStartedAt = globalThis.performance?.now?.() || Date.now();
+        OPERATIONAL_UPDATED_EVENTS.forEach((eventName) => {
+          globalThis.dispatchEvent?.(new Event(eventName));
+        });
+        if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
+          const refreshDurationMs = Math.round((globalThis.performance?.now?.() || Date.now()) - refreshStartedAt);
+          console.info(`[import] refresco final: ${refreshDurationMs}ms`);
+        }
+      };
+
+      if (typeof globalThis.requestAnimationFrame === 'function') {
+        globalThis.requestAnimationFrame(dispatchRefreshEvents);
+      } else {
+        setTimeout(dispatchRefreshEvents, 0);
+      }
     }
   };
 
@@ -192,7 +244,12 @@ export default function ConfiguracionPage() {
         ? await parseExcelBackup(await file.arrayBuffer())
         : parseJsonBackup(await file.text());
       await waitForBrowserPaint();
+      const validationStartedAt = globalThis.performance?.now?.() || Date.now();
       const validation = validateBackupPayload(payload);
+      if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
+        const validationDurationMs = Math.round((globalThis.performance?.now?.() || Date.now()) - validationStartedAt);
+        console.info(`[import] validacion de archivo: ${validationDurationMs}ms`);
+      }
       await waitForBrowserPaint();
       const summary = summarizeBackupPayload(payload, validation);
 
@@ -234,6 +291,7 @@ export default function ConfiguracionPage() {
       await waitForBrowserPaint();
       const summary = await importOperationalBackup(importPreview.payload, {
         onProgress: setBusyMessage,
+        precomputedValidation: importPreview.validation,
       });
       setImportResult(summary);
       setImportPreview(null);
@@ -277,13 +335,13 @@ export default function ConfiguracionPage() {
     refreshDataOnClose.current = false;
     try {
       await waitForBrowserPaint();
-      await resetOperationalData(user.email, {
+      const summary = await resetOperationalData(user.email, {
         onProgress: setBusyMessage,
       });
       AlertHubSingleton.getInstance().reset();
       setResetConfirmation('');
       refreshDataOnClose.current = true;
-      setBusyDoneMessage('Datos operativos restablecidos correctamente.');
+      setBusyDoneMessage(`Datos operativos restablecidos correctamente. ${formatResetSummary(summary)}`);
       setBusyDone(true);
     } catch (error) {
       console.error('Error restableciendo datos.', error);
@@ -304,7 +362,7 @@ export default function ConfiguracionPage() {
   return (
     <>
       {isBusy && busyMessage && (
-        <DinoGameOverlay
+        <LoadingProgressOverlay
           message={busyMessage}
           done={busyDone}
           doneMessage={busyDoneMessage}
@@ -346,23 +404,28 @@ export default function ConfiguracionPage() {
             <div className="flex gap-4">
               <input
                 id="settings-threshold-input"
-                type="number"
-                value={threshold}
-                onChange={(event) => setThreshold(Number(event.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={thresholdInput}
+                onChange={(event) => {
+                  if (isThresholdDraft(event.target.value)) {
+                    setThresholdInput(event.target.value);
+                  }
+                }}
+                onBlur={handleThresholdBlur}
                 className={`w-full rounded-lg border px-4 py-2 outline-none focus:ring-2 focus:ring-syntix-green ${
                   isDarkMode
                     ? 'border-slate-700 bg-slate-950 text-slate-100'
                     : 'border-gray-300 bg-white text-gray-900'
                 }`}
-                min="1"
-                max="60"
+                aria-describedby="settings-threshold-help"
               />
-              <button data-onboarding="settings-save-button" onClick={() => showMessage('success', 'Umbral guardado correctamente.')} className="bg-syntix-navy text-white px-4 py-2 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2">
+              <button data-onboarding="settings-save-button" onClick={handleThresholdSave} className="bg-syntix-navy text-white px-4 py-2 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2">
                 <Save className="w-4 h-4" /> Guardar
               </button>
             </div>
-            <p className={`mt-2 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-              Los documentos se marcaran en amarillo cuando falten {threshold} dias o menos para su vencimiento.
+            <p id="settings-threshold-help" className={`mt-2 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+              Los documentos se marcaran en amarillo cuando falten {threshold} dias o menos para su vencimiento. Rango permitido: {ALERT_THRESHOLD_MIN} a {ALERT_THRESHOLD_MAX}.
             </p>
           </div>
         </div>

@@ -121,8 +121,8 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
       } else {
         // Si el backend pide empresa/teléfono, guardamos el token y pedimos esos datos.
         const needsExtra =
-          res.message?.toLowerCase().includes('empresa') ||
-          res.message?.toLowerCase().includes('tel');
+          res.mode === 'register' &&
+          (res.requiresCompanyName || res.requiresPhone);
         if (needsExtra) {
           setPendingGoogleToken(credential);
           setGoogleEmpresa('');
