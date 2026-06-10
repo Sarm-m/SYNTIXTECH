@@ -6,10 +6,12 @@ apps/**/node_modules/
 .env
 .env.*
 !.env.example
+apps/web/.env
+apps/web/.env.*
 apps/**/.env
 apps/**/.env.*
+!apps/web/.env.example
 !apps/**/.env.example
-!apps/**/.env.local.example
 backend/.env
 backend/.env.*
 !backend/.env.example
