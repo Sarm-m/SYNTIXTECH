@@ -47,7 +47,7 @@ OTP_COOLDOWN_SEGUNDOS=60
 Frontend variables:
 
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=/api
 VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
 VITE_ENABLE_LOCAL_AUTH_FALLBACK=false
 ```

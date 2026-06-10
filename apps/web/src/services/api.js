@@ -13,7 +13,7 @@ const removeTrailingSlashes = (value) => {
 // Normaliza la URL base para que el frontend acepte variables con o sin sufijo /api.
 const normalizeApiBaseUrl = (value) => {
   // Se limpia slash final para evitar dobles `//` en las rutas.
-  const baseUrl = removeTrailingSlashes(value || 'http://localhost:5000/api');
+  const baseUrl = removeTrailingSlashes(value || '/api');
   // Si el usuario configuró solo el host, aquí se agrega `/api` automáticamente.
   return baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 };
