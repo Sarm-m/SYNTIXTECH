@@ -11,6 +11,7 @@ import {
   normalizeDocumentCode,
   normalizePlate,
 } from '@/utils/colombiaFormats.js';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const ASEGURADORAS_DEMO = [
   'Seguros Mundial',
@@ -36,6 +37,7 @@ const createInitialFormData = () => ({
 export default function AddDocumentModal({ isOpen, onClose }) {
   const { vehiculos } = useVehicles();
   const { addSoat } = useDocuments();
+  const toast = useToast();
   const [formData, setFormData] = useState(createInitialFormData);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -62,7 +64,7 @@ export default function AddDocumentModal({ isOpen, onClose }) {
     setError('');
 
     if (!formData.vehiculoId) {
-      setError('Seleccione un vehiculo asociado al SOAT.');
+      setError('Seleccione un vehículo asociado al SOAT.');
       return;
     }
 
@@ -90,7 +92,7 @@ export default function AddDocumentModal({ isOpen, onClose }) {
     }
 
     if (!isValidDateValue(formData.fechaExpedicion)) {
-      setError('Seleccione una fecha de expedicion valida.');
+      setError('Seleccione una fecha de expedición válida.');
       return;
     }
 
@@ -117,6 +119,7 @@ export default function AddDocumentModal({ isOpen, onClose }) {
         observaciones: formData.observaciones.trim(),
       });
 
+      toast.success('SOAT registrado correctamente.');
       handleClose();
     } catch (err) {
       setError(err.response?.data?.error || 'Error al guardar el SOAT. Intenta de nuevo.');
@@ -146,7 +149,7 @@ export default function AddDocumentModal({ isOpen, onClose }) {
           )}
 
           <div>
-            <label htmlFor="soat-vehiculo" className="block text-sm font-bold text-gray-700 mb-1">Vehiculo</label>
+            <label htmlFor="soat-vehiculo" className="block text-sm font-bold text-gray-700 mb-1">Vehículo</label>
             <select
               id="soat-vehiculo"
               required
@@ -154,7 +157,7 @@ export default function AddDocumentModal({ isOpen, onClose }) {
               onChange={(e) => setFormData({ ...formData, vehiculoId: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white"
             >
-              <option value="">Selecciona un vehiculo</option>
+              <option value="">Selecciona un vehículo</option>
               {vehiculos.map((vehiculo) => (
                 <option key={vehiculo.id} value={vehiculo.id}>
                   {vehiculo.placa} · {vehiculo.tipo || 'Otro'}
@@ -165,7 +168,7 @@ export default function AddDocumentModal({ isOpen, onClose }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="soat-numero-poliza" className="block text-sm font-bold text-gray-700 mb-1">Numero de poliza</label>
+              <label htmlFor="soat-numero-poliza" className="block text-sm font-bold text-gray-700 mb-1">Número de póliza</label>
               <input
                 id="soat-numero-poliza"
                 type="text"
@@ -197,7 +200,7 @@ export default function AddDocumentModal({ isOpen, onClose }) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="soat-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha expedicion</label>
+              <label htmlFor="soat-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha de expedición</label>
               <input
                 id="soat-fecha-expedicion"
                 type="date"
@@ -252,7 +255,7 @@ export default function AddDocumentModal({ isOpen, onClose }) {
               className="bg-syntix-navy text-white px-6 py-2 rounded-lg font-medium hover:opacity-90 flex items-center gap-2 disabled:opacity-60"
             >
               <Save className="w-4 h-4" />
-              {saving ? 'Guardando...' : 'Guardar'}
+              {saving ? 'Guardando...' : 'Registrar SOAT'}
             </button>
           </div>
         </form>

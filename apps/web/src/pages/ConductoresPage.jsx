@@ -8,6 +8,8 @@ import { useConductors } from '@/hooks/useConductors.js';
 import { useVehicles } from '@/hooks/useVehicles.js';
 import { getVehicleOptionLabel } from '@/utils/colombiaFormats.js';
 import { formatColombianDate, getDocumentStatusReason, getExpirationAlertText } from '@/utils/dateUtils.js';
+import { ConfirmDialog } from '@/components/UI/SaasUI.jsx';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const getConductorId = (conductor) => conductor?._id || conductor?.id;
 
@@ -46,9 +48,12 @@ export default function ConductoresPage() {
   const { conductores, deleteConductor } = useConductors();
   const { vehiculos } = useVehicles();
   const { isDarkMode } = useTheme();
+  const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isConductorModalOpen, setIsConductorModalOpen] = useState(false);
   const [conductorToEdit, setConductorToEdit] = useState(null);
+  const [conductorToDelete, setConductorToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const openCreateModal = () => {
     setConductorToEdit(null);
@@ -63,6 +68,20 @@ export default function ConductoresPage() {
   const handleCloseModal = () => {
     setIsConductorModalOpen(false);
     setConductorToEdit(null);
+  };
+
+  const handleDelete = async () => {
+    if (!conductorToDelete) return;
+    setDeleting(true);
+    try {
+      await deleteConductor(conductorToDelete.id);
+      toast.success('Conductor eliminado correctamente.');
+      setConductorToDelete(null);
+    } catch {
+      toast.error('No pudimos eliminar el conductor. Intenta nuevamente.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const filtered = conductores.filter(
@@ -87,14 +106,14 @@ export default function ConductoresPage() {
       </Helmet>
 
       <div data-onboarding="conductors-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>Gestion de Conductores</h1>
+          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>Gestión de conductores</h1>
         <button
           type="button"
           onClick={openCreateModal}
           data-onboarding="conductors-add-button"
           className="bg-syntix-navy text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2 shadow-sm"
         >
-          <Plus className="w-4 h-4" /> Nuevo Conductor
+          <Plus className="w-4 h-4" /> Agregar conductor
         </button>
       </div>
 
@@ -163,7 +182,7 @@ export default function ConductoresPage() {
                     <dd className="break-words text-xs font-semibold">{statusReason}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Vehiculo asignado</dt>
+                    <dt className="text-xs font-bold uppercase tracking-wide opacity-70">Vehículo asignado</dt>
                     <dd className="break-words">{assignedVehicleLabel}</dd>
                   </div>
                 </dl>
@@ -182,7 +201,7 @@ export default function ConductoresPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => deleteConductor(c.id)}
+                    onClick={() => setConductorToDelete(c)}
                     className={`inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                       isDarkMode
                         ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
@@ -280,7 +299,7 @@ export default function ConductoresPage() {
                     <td className="px-6 py-4 text-right">
                       <button
                       type="button"
-                      onClick={() => deleteConductor(c.id)}
+                      onClick={() => setConductorToDelete(c)}
                       className={`rounded-lg p-2 transition-colors ${
                         isDarkMode
                           ? 'text-slate-500 hover:bg-red-500/10 hover:text-red-300'
@@ -303,6 +322,16 @@ export default function ConductoresPage() {
         isOpen={isConductorModalOpen}
         onClose={handleCloseModal}
         conductorToEdit={conductorToEdit}
+      />
+      <ConfirmDialog
+        isOpen={Boolean(conductorToDelete)}
+        title="Eliminar conductor"
+        description={`Vas a eliminar a ${conductorToDelete?.nombre || 'este conductor'} y se retirará su asignación actual. Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, eliminar"
+        onConfirm={handleDelete}
+        onCancel={() => setConductorToDelete(null)}
+        busy={deleting}
+        destructive
       />
     </div>
   );

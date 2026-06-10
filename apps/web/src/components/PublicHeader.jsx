@@ -206,8 +206,11 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
                 <UserProfileDropdown variant="light" />
               ) : (
                 <>
+                  <Link to="/demo/dashboard" className="text-syntix-navy font-medium hover:text-syntix-green transition-colors">
+                    Ver demo
+                  </Link>
                   <button type="button" onClick={handleLoginClick} className="text-syntix-navy font-medium hover:text-syntix-green transition-colors">
-                    Iniciar Sesion
+                    Iniciar sesión
                   </button>
                   <button type="button" onClick={handleRegisterClick} className="bg-syntix-navy text-white px-5 py-2.5 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors shadow-md shadow-syntix-navy/20">
                     Registrarse
@@ -289,7 +292,7 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
                     className={mobileUserActionClass}
                   >
                     <Settings className="h-4 w-4 shrink-0" />
-                    Configuracion
+                    Configuración
                   </button>
                   <button
                     type="button"
@@ -297,14 +300,17 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
                     className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold text-syntix-red transition-colors hover:bg-red-50"
                   >
                     <LogOut className="h-4 w-4 shrink-0" />
-                    Cerrar Sesion
+                    Cerrar sesión
                   </button>
                 </div>
               </div>
             ) : (
               <>
+                <button type="button" onClick={() => handleMobileRouteClick('/demo/dashboard')} className="min-h-11 w-full rounded-lg border border-syntix-green py-2 font-medium text-syntix-green">
+                  Ver demo
+                </button>
                 <button type="button" onClick={handleLoginClick} className="min-h-11 w-full rounded-lg border border-syntix-navy py-2 font-medium text-syntix-navy">
-                  Iniciar Sesion
+                  Iniciar sesión
                 </button>
                 <button type="button" onClick={handleRegisterClick} className="min-h-11 w-full rounded-lg bg-syntix-navy py-2 font-medium text-white">
                   Registrarse

@@ -4,6 +4,8 @@ import { Search, Download, Eye, Trash2, Calendar } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge.jsx';
 import DetallesValidacionModal from '@/components/DetallesValidacionModal.jsx';
 import { useValidationHistory } from '@/hooks/useValidationHistory.js';
+import { ConfirmDialog, EmptyState } from '@/components/UI/SaasUI.jsx';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 // HistorialValidacionesPage funciona como bitácora de auditoría para consultas RUNT ya realizadas.
 export default function HistorialValidacionesPage() {
@@ -15,6 +17,9 @@ export default function HistorialValidacionesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedValidation, setSelectedValidation] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [validationToDelete, setValidationToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const toast = useToast();
 
   const itemsPerPage = 20;
 
@@ -70,8 +75,21 @@ export default function HistorialValidacionesPage() {
   };
 
   const handleDelete = (id) => {
-    if (confirm('¿Estás seguro que deseas eliminar esta validación?')) {
-      deleteValidation(id);
+    setValidationToDelete(validations.find((validation) => validation.id === id) || { id });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!validationToDelete) return;
+    setDeleting(true);
+    try {
+      await deleteValidation(validationToDelete.id);
+      toast.success('Validación eliminada correctamente.');
+      setValidationToDelete(null);
+      setIsModalOpen(false);
+    } catch {
+      toast.error('No pudimos eliminar la validación. Intenta nuevamente.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -195,12 +213,32 @@ export default function HistorialValidacionesPage() {
       {/* Tabla */}
       <div data-onboarding="runt-history-table" className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {filteredValidations.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-gray-500 font-medium">No hay validaciones registradas</p>
+          <div className="p-4 sm:p-8">
+            <EmptyState
+              icon={Search}
+              title="No hay validaciones registradas todavía"
+              description="Consulta una placa en el módulo RUNT para guardar evidencia y construir el historial."
+              actionLabel="Ir a validación RUNT"
+              actionTo="/validacion-runt"
+              compact
+            />
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="space-y-3 p-4 md:hidden">
+              {paginatedValidations.map((validation) => {
+                const soatState = validation.resultadoRUNT?.data?.soat?.vigente ? 'verde' : 'rojo';
+                const rtmState = validation.resultadoRUNT?.data?.rtm?.vigente ? 'verde' : 'rojo';
+                return (
+                  <article key={validation.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3"><div><p className="text-lg font-black text-syntix-navy">{validation.placa}</p><p className="mt-1 text-xs text-gray-500">{new Date(validation.timestamp).toLocaleString('es-CO')}</p></div><button type="button" onClick={() => handleViewDetails(validation)} className="rounded-lg bg-syntix-navy/5 p-2 text-syntix-navy" aria-label={`Ver detalles ${validation.placa}`}><Eye className="h-4 w-4" /></button></div>
+                    <div className="mt-4 flex gap-3"><span className="text-xs font-bold text-gray-500">SOAT</span><StatusBadge status={soatState} /><span className="ml-2 text-xs font-bold text-gray-500">RTM</span><StatusBadge status={rtmState} /></div>
+                    <button type="button" onClick={() => handleDelete(validation.id)} className="mt-4 min-h-10 w-full rounded-lg bg-red-50 text-sm font-bold text-red-600">Eliminar validación</button>
+                  </article>
+                );
+              })}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left text-sm text-gray-600">
                 <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
                   <tr>
@@ -291,9 +329,19 @@ export default function HistorialValidacionesPage() {
           validation={selectedValidation}
           historialPlaca={getValidationHistory(selectedValidation.placa)}
           onDeleteValidation={handleDelete}
-          onDownloadPDF={() => alert('Descarga PDF implementada en SUB-03.8')}
+          onDownloadPDF={() => toast.info('La exportación PDF estará disponible en una próxima versión.')}
         />
       )}
+      <ConfirmDialog
+        isOpen={Boolean(validationToDelete)}
+        title="Eliminar validación"
+        description={`Vas a eliminar la validación de ${validationToDelete?.placa || 'esta placa'}. Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, eliminar"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setValidationToDelete(null)}
+        busy={deleting}
+        destructive
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { X, User, Save } from 'lucide-react';
 import { useConductors } from '@/hooks/useConductors.js';
 import { useVehicles } from '@/hooks/useVehicles.js';
 import { isValidCedula, isValidColombianMobile, sanitizeDocument, sanitizePhone, getVehicleOptionLabel } from '@/utils/colombiaFormats.js';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const createInitialFormData = () => ({
   nombre: '',
@@ -31,6 +32,7 @@ export default function AddConductorModal({
   conductorToEdit = null,
 }) {
   const { conductores, addConductor, updateConductor } = useConductors();
+  const toast = useToast();
   const { vehiculos, assignConductor } = useVehicles();
   const [formData, setFormData] = useState(createInitialFormData);
   const [error, setError] = useState('');
@@ -150,12 +152,14 @@ export default function AddConductorModal({
             await assignConductor(newVehicleId, conductorToEdit.id);
           }
         }
+        toast.success('Conductor actualizado correctamente.');
       } else {
         const newConductor = await addConductor(payload);
 
         if (formData.vehiculoId) {
           await assignConductor(formData.vehiculoId, newConductor.id);
         }
+        toast.success('Conductor creado correctamente.');
       }
 
       handleClose();
@@ -240,7 +244,7 @@ export default function AddConductorModal({
           </div>
 
           <div>
-            <label htmlFor="conductor-vehiculo" className="block text-sm font-bold text-gray-700 mb-1">Vehiculo a asignar</label>
+            <label htmlFor="conductor-vehiculo" className="block text-sm font-bold text-gray-700 mb-1">Vehículo a asignar</label>
             <select
               id="conductor-vehiculo"
               value={formData.vehiculoId}

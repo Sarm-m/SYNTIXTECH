@@ -23,7 +23,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -114,7 +114,7 @@
 
 body {
 	font-family: 'DM Sans', sans-serif;
-    background-color: #f9fafb;
+    background-color: #f1f5f9;
     color: #0f172a;
     transition: background-color 200ms ease, color 200ms ease;
 }
@@ -122,6 +122,23 @@ body {
 .dark body {
   background-color: #020617;
   color: #e2e8f0;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2d6a4f;
+  outline-offset: 2px;
 }
 
 .document-modal {

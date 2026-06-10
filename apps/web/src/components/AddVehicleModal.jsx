@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { X, Car, Save } from 'lucide-react';
 import { useVehicles } from '@/hooks/useVehicles.js';
 import { isValidPlate, normalizePlate, sanitizePlate } from '@/utils/colombiaFormats.js';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const VEHICLE_TYPE_OPTIONS = [
   'Automovil',
@@ -31,12 +32,13 @@ const createInitialFormData = (currentYear) => ({
 // Además centraliza las validaciones que impactan el inventario base de la flota.
 export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null }) {
   const { vehiculos, addVehicle, updateVehicle } = useVehicles();
+  const toast = useToast();
   const currentYear = new Date().getFullYear();
   const [formData, setFormData] = useState(() => createInitialFormData(currentYear));
   const [error, setError] = useState('');
 
   const isEditing = Boolean(vehicleToEdit?.id);
-  const modalTitle = isEditing ? 'Editar Vehiculo' : 'Agregar Vehiculo';
+  const modalTitle = isEditing ? 'Editar vehículo' : 'Agregar vehículo';
   const submitLabel = isEditing ? 'Actualizar' : 'Guardar';
 
   const resetForm = () => {
@@ -123,11 +125,13 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
 
       if (isEditing) {
         await updateVehicle(vehicleToEdit.id, payload);
+        toast.success('Vehículo actualizado correctamente.');
       } else {
         await addVehicle({
           ...payload,
           conductorId: null,
         });
+        toast.success('Vehículo creado correctamente.');
       }
 
       handleClose();

@@ -94,7 +94,7 @@ export default function UserProfileDropdown({ variant = 'light' }) {
             onClick={() => setIsOpen(false)}
             className={itemClassName}
           >
-            <Settings className="w-4 h-4" /> Configuracion
+            <Settings className="w-4 h-4" /> Configuración
           </Link>
           
           <div className={`my-1 h-px ${useDarkMenu ? 'bg-slate-800' : 'bg-gray-100'}`}></div>

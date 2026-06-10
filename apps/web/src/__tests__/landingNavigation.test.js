@@ -9,7 +9,7 @@ import {
   setLandingHash,
 } from '@/utils/landingNavigation.js';
 
-const SECTION_IDS = ['beneficios', 'equipo', 'servicios', 'planes'];
+const SECTION_IDS = ['beneficios', 'funciones', 'seguridad', 'contacto'];
 
 const createLandingBrowserMocks = () => {
   const sections = new Map(
@@ -53,10 +53,10 @@ describe('landingNavigation', () => {
   it('LANDING_NAV_ITEMS mantiene el orden comercial del header', () => {
     expect(LANDING_NAV_ITEMS.map((item) => item.label)).toEqual([
       'Inicio',
-      'Servicios',
+      'Funciones',
       'Beneficios',
-      'Planes',
-      'Nuestro Equipo',
+      'Seguridad',
+      'Contacto',
     ]);
   });
 
@@ -72,8 +72,8 @@ describe('landingNavigation', () => {
   });
 
   it('scrollToSection llama scrollIntoView cuando existe el id', () => {
-    const element = document.getElementById('servicios');
-    scrollToSection('servicios');
+    const element = document.getElementById('funciones');
+    scrollToSection('funciones');
     expect(element.scrollIntoView).toHaveBeenCalledWith({
       behavior: 'smooth',
       block: 'start',
@@ -81,8 +81,8 @@ describe('landingNavigation', () => {
   });
 
   it('scrollToLandingSection delega en scrollToSection', () => {
-    scrollToLandingSection('planes');
-    expect(document.getElementById('planes').scrollIntoView).toHaveBeenCalled();
+    scrollToLandingSection('seguridad');
+    expect(document.getElementById('seguridad').scrollIntoView).toHaveBeenCalled();
   });
 
   it('scrollToSection no lanza error si la sección no existe', () => {
@@ -99,9 +99,9 @@ describe('landingNavigation', () => {
   });
 
   it('setLandingHash actualiza el hash y hace scroll a la sección', () => {
-    setLandingHash('servicios');
-    expect(window.location.hash).toBe('#servicios');
-    expect(document.getElementById('servicios').scrollIntoView).toHaveBeenCalled();
+    setLandingHash('funciones');
+    expect(window.location.hash).toBe('#funciones');
+    expect(document.getElementById('funciones').scrollIntoView).toHaveBeenCalled();
   });
 
   it('applyLandingHashFromLocation trata #inicio como limpieza de hash', () => {
@@ -113,9 +113,9 @@ describe('landingNavigation', () => {
 
   it.each([
     ['beneficios', LANDING_SECTION_IDS.beneficios],
-    ['equipo', LANDING_SECTION_IDS.equipo],
-    ['servicios', LANDING_SECTION_IDS.servicios],
-    ['planes', LANDING_SECTION_IDS.planes],
+    ['funciones', LANDING_SECTION_IDS.funciones],
+    ['seguridad', LANDING_SECTION_IDS.seguridad],
+    ['contacto', LANDING_SECTION_IDS.contacto],
   ])('applyLandingHashFromLocation hace scroll con #%s', (hashLabel, sectionId) => {
     applyLandingHashFromLocation(`#${hashLabel}`);
     expect(document.getElementById(sectionId).scrollIntoView).toHaveBeenCalled();

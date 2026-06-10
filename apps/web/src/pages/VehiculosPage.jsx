@@ -7,6 +7,8 @@ import { useOnboarding } from '@/contexts/OnboardingContext.jsx';
 import { useTheme } from '@/contexts/ThemeContext.jsx';
 import { useVehicles } from '@/hooks/useVehicles.js';
 import { getVehicleStatusSummary } from '@/utils/dateUtils.js';
+import { ConfirmDialog } from '@/components/UI/SaasUI.jsx';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const VISIBLE_STATUS_REASONS = 3;
 
@@ -15,11 +17,14 @@ export default function VehiculosPage() {
   const { vehiculos, deleteVehicle } = useVehicles();
   const { currentStep, isTourActive } = useOnboarding();
   const { isDarkMode } = useTheme();
+  const toast = useToast();
   const tutorialOpenedModalRef = useRef(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterState, setFilterState] = useState('todos');
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [vehicleToEdit, setVehicleToEdit] = useState(null);
+  const [vehicleToDelete, setVehicleToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const openCreateModal = () => {
     setVehicleToEdit(null);
@@ -34,6 +39,20 @@ export default function VehiculosPage() {
   const handleCloseModal = () => {
     setIsVehicleModalOpen(false);
     setVehicleToEdit(null);
+  };
+
+  const handleDelete = async () => {
+    if (!vehicleToDelete) return;
+    setDeleting(true);
+    try {
+      await deleteVehicle(vehicleToDelete.id);
+      toast.success('Vehículo eliminado correctamente.');
+      setVehicleToDelete(null);
+    } catch {
+      toast.error('No pudimos eliminar el vehículo. Intenta nuevamente.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // El filtrado une texto libre y severidad para apoyar tanto búsqueda rápida como revisión operativa.
@@ -88,9 +107,9 @@ export default function VehiculosPage() {
         className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
       >
         <div>
-          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>Gestion de Vehiculos</h1>
+          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>Gestión de vehículos</h1>
           <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-            Consulta, registra y valida los vehiculos asociados al usuario dentro del sistema.
+            Consulta, registra y controla el estado documental de los vehículos de tu flota.
           </p>
         </div>
 
@@ -100,7 +119,7 @@ export default function VehiculosPage() {
           data-onboarding="vehicles-add-button"
           className="bg-syntix-navy text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2 shadow-sm"
         >
-          <Plus className="w-4 h-4" /> Nuevo Vehiculo
+          <Plus className="w-4 h-4" /> Agregar vehículo
         </button>
       </div>
 
@@ -210,7 +229,7 @@ export default function VehiculosPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => deleteVehicle(v.id)}
+                    onClick={() => setVehicleToDelete(v)}
                     className={`inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                       isDarkMode
                         ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
@@ -317,7 +336,7 @@ export default function VehiculosPage() {
                     <td className="px-6 py-4 text-right">
                       <button
                         type="button"
-                        onClick={() => deleteVehicle(v.id)}
+                        onClick={() => setVehicleToDelete(v)}
                         className={`rounded-lg p-2 transition-colors ${
                           isDarkMode
                             ? 'text-slate-500 hover:bg-red-500/10 hover:text-red-300'
@@ -356,6 +375,16 @@ export default function VehiculosPage() {
         isOpen={isVehicleModalOpen}
         onClose={handleCloseModal}
         vehicleToEdit={vehicleToEdit}
+      />
+      <ConfirmDialog
+        isOpen={Boolean(vehicleToDelete)}
+        title="Eliminar vehículo"
+        description={`Vas a eliminar ${vehicleToDelete?.placa || 'este vehículo'} y sus documentos asociados. Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, eliminar"
+        onConfirm={handleDelete}
+        onCancel={() => setVehicleToDelete(null)}
+        busy={deleting}
+        destructive
       />
     </div>
   );

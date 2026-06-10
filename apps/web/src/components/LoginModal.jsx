@@ -95,10 +95,10 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
       if (res.success) {
         onClose();
       } else {
-        setError(res.message || 'Credenciales invalidas');
+        setError(res.message || 'Credenciales inválidas');
       }
     } catch (err) {
-      setError('Error inesperado al iniciar sesion. Intenta nuevamente.');
+      setError('Error inesperado al iniciar sesión. Intenta nuevamente.');
       console.error('Error en login:', err);
     } finally {
       setIsSubmitting(false);
@@ -129,7 +129,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
           setGoogleTelefono('');
           setMode('googleComplete');
         } else {
-          setError(res.message || 'No se pudo iniciar sesion con Google.');
+          setError(res.message || 'No se pudo iniciar sesión con Google.');
         }
       }
     } finally {
@@ -252,7 +252,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         setRecoveryToken('');
         setResetChannel('');
         setResetDestinationHint('');
-        setNotice(res.message || 'Contrasena actualizada. Ya puedes iniciar sesion.');
+        setNotice(res.message || 'Contraseña actualizada. Ya puedes iniciar sesión.');
         setMode('login');
       } else {
         setError(res.message || 'No se pudo actualizar la contrasena.');
@@ -266,10 +266,10 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   };
 
   const titleByMode = {
-    login: 'Iniciar Sesion',
+    login: 'Iniciar sesión',
     recover: 'Recuperar Cuenta',
     chooseChannel: 'Enviar Codigo',
-    reset: 'Nueva Contrasena',
+    reset: 'Nueva contraseña',
     googleComplete: 'Completar Registro',
   };
 
@@ -294,7 +294,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
                 type="button"
                 onClick={goToLogin}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                aria-label="Volver a iniciar sesion"
+                aria-label="Volver a iniciar sesión"
                 title="Volver"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -306,7 +306,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             type="button"
             onClick={onClose}
             className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Cerrar inicio de sesion"
+            aria-label="Cerrar inicio de sesión"
           >
             <X className="w-6 h-6" />
           </button>
@@ -328,7 +328,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             </div>
 
             <div>
-              <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">Contrasena</label>
+              <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input id="login-password" type={showPassword ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="••••••••" />
@@ -528,7 +528,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             </div>
 
             <div>
-              <label htmlFor="login-new-password" className="block text-sm font-medium text-gray-700 mb-1">Nueva Contrasena</label>
+              <label htmlFor="login-new-password" className="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input id="login-new-password" type={showNewPassword ? 'text' : 'password'} required value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="••••••••" />
@@ -545,7 +545,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             </div>
 
             <div>
-              <label htmlFor="login-confirm-password" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Contrasena</label>
+              <label htmlFor="login-confirm-password" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input id="login-confirm-password" type={showNewPassword ? 'text' : 'password'} required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="••••••••" />

@@ -30,6 +30,7 @@ const normalizeRtm = (rtm) => {
 export function RtmProvider({ children }) {
   const [storedRtms, setStoredRtms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { user } = useAuth();
   const { simulatedDate } = useSimulatedDate();
   const [threshold] = useLocalStorage('syntix_threshold', 15);
@@ -41,11 +42,13 @@ export function RtmProvider({ children }) {
       return;
     }
     setLoading(true);
+    setError('');
     try {
       const res = await api.get('/rtms');
       setStoredRtms(res.data.map(normalizeRtm));
     } catch (err) {
       console.error('Error cargando RTMs:', err);
+      setError('No pudimos cargar las revisiones técnico-mecánicas. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -92,7 +95,7 @@ export function RtmProvider({ children }) {
   };
 
   return (
-    <RtmContext.Provider value={{ rtms, addRtm, editRtm, removeRtm, loading }}>
+    <RtmContext.Provider value={{ rtms, addRtm, editRtm, removeRtm, loading, error, refetch: fetchRtms }}>
       {children}
     </RtmContext.Provider>
   );

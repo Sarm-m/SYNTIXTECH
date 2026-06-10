@@ -99,7 +99,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
         <div className={`mt-auto shrink-0 border-t p-4 ${isDarkMode ? 'border-slate-800 bg-slate-950' : 'border-gray-200 bg-white'}`}>
           <div className={`text-center text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-            Drive Control v1.0
+            DriveControl v1.0.0
           </div>
         </div>
       </aside>

@@ -5,17 +5,17 @@
 /** Ids de sección usados en HomePage, header y hashes de URL. */
 export const LANDING_SECTION_IDS = {
   beneficios: 'beneficios',
-  equipo: 'equipo',
-  servicios: 'servicios',
-  planes: 'planes',
+  funciones: 'funciones',
+  seguridad: 'seguridad',
+  contacto: 'contacto',
 };
 
 export const LANDING_NAV_ITEMS = [
   { label: 'Inicio', sectionId: null, href: '/' },
-  { label: 'Servicios', sectionId: LANDING_SECTION_IDS.servicios, href: '/#servicios' },
+  { label: 'Funciones', sectionId: LANDING_SECTION_IDS.funciones, href: '/#funciones' },
   { label: 'Beneficios', sectionId: LANDING_SECTION_IDS.beneficios, href: '/#beneficios' },
-  { label: 'Planes', sectionId: LANDING_SECTION_IDS.planes, href: '/#planes' },
-  { label: 'Nuestro Equipo', sectionId: LANDING_SECTION_IDS.equipo, href: '/#equipo' },
+  { label: 'Seguridad', sectionId: LANDING_SECTION_IDS.seguridad, href: '/#seguridad' },
+  { label: 'Contacto', sectionId: LANDING_SECTION_IDS.contacto, href: '/#contacto' },
 ];
 
 export function scrollToSection(sectionId) {

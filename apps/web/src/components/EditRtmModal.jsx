@@ -11,6 +11,7 @@ import {
   normalizeDocumentCode,
   normalizePlate,
 } from '@/utils/colombiaFormats.js';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const CDAS_DEMO = [
   'CDA Bogota Norte',
@@ -37,6 +38,7 @@ const createInitialFormData = () => ({
 export default function EditRtmModal({ isOpen, onClose, rtm }) {
   const { editRtm } = useRtm();
   const { vehiculos } = useVehicles();
+  const toast = useToast();
   const [formData, setFormData] = useState(createInitialFormData);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -65,7 +67,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
     setError('');
 
     if (!rtm.vehiculoId) {
-      setError('Seleccione un vehiculo asociado a la RTM.');
+      setError('Seleccione un vehículo asociado a la RTM.');
       return;
     }
 
@@ -76,12 +78,12 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
 
     const numeroCertificado = normalizeDocumentCode(formData.numeroCertificado);
     if (!numeroCertificado) {
-      setError('El numero de certificado es obligatorio.');
+      setError('El número de certificado es obligatorio.');
       return;
     }
 
     if (!isValidDocumentCode(numeroCertificado)) {
-      setError('El numero de certificado debe ser alfanumerico y tener entre 6 y 30 caracteres.');
+      setError('El número de certificado debe ser alfanumérico y tener entre 6 y 30 caracteres.');
       return;
     }
 
@@ -92,12 +94,12 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
     }
 
     if (!isValidDateValue(formData.fechaExpedicion) || !isValidDateValue(formData.fechaVencimiento)) {
-      setError('Seleccione fechas validas para la RTM.');
+      setError('Seleccione fechas válidas para la RTM.');
       return;
     }
 
     if (!isDateRangeValid(formData.fechaExpedicion, formData.fechaVencimiento)) {
-      setError('La fecha de vencimiento no puede ser anterior a la fecha de expedicion.');
+      setError('La fecha de vencimiento no puede ser anterior a la fecha de expedición.');
       return;
     }
 
@@ -113,6 +115,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
         resultado: formData.resultado,
         observaciones: formData.observaciones.trim(),
       });
+      toast.success('Revisión técnico-mecánica actualizada correctamente.');
       onClose();
     } catch (err) {
       setError(err.response?.data?.error || 'Error al guardar los cambios. Intenta de nuevo.');
@@ -142,15 +145,15 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
           )}
 
           <div>
-            <span className="document-modal-label block text-sm font-bold mb-1">Vehiculo</span>
+            <span className="document-modal-label block text-sm font-bold mb-1">Vehículo</span>
             <div className="document-modal-readonly w-full px-4 py-2 border rounded-lg text-sm">
-              {vehiculo ? `${vehiculo.placa} · ${vehiculo.tipo || 'Otro'}` : 'Vehiculo no encontrado'}
+              {vehiculo ? `${vehiculo.placa} · ${vehiculo.tipo || 'Otro'}` : 'Vehículo no encontrado'}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="edit-rtm-numero-certificado" className="block text-sm font-bold text-gray-700 mb-1">Numero de certificado RTM</label>
+              <label htmlFor="edit-rtm-numero-certificado" className="block text-sm font-bold text-gray-700 mb-1">Número de certificado RTM</label>
               <input
                 id="edit-rtm-numero-certificado"
                 type="text"
@@ -180,7 +183,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="edit-rtm-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha expedicion</label>
+              <label htmlFor="edit-rtm-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha de expedición</label>
               <input
                 id="edit-rtm-fecha-expedicion"
                 type="date"

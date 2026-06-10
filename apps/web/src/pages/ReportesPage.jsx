@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Helmet } from 'react-helmet';
-import { AlertTriangle, Car, Download, FileText, ShieldCheck, Users } from 'lucide-react';
+import { AlertTriangle, BarChart3, Car, Download, FileText, ShieldCheck, Users } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext.jsx';
 import { useVehicles } from '@/hooks/useVehicles.js';
 import { useConductors } from '@/hooks/useConductors.js';
@@ -10,6 +10,7 @@ import { useRtm } from '@/contexts/RtmContext.jsx';
 import { useAlerts } from '@/hooks/useAlerts.js';
 import { formatColombianDate, getExpirationAlertText, getStatusLabel } from '@/utils/dateUtils.js';
 import { buildQualityMetricsSummary } from '@/utils/qualityMetrics.js';
+import { EmptyState } from '@/components/UI/SaasUI.jsx';
 
 const statusLabels = {
   verde: getStatusLabel('verde'),
@@ -183,14 +184,17 @@ export default function ReportesPage() {
 
       <div data-onboarding="reports-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>Reportes y Analitica</h1>
-          <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>Metricas reales de cumplimiento de la flota</p>
+          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>Reportes y analítica</h1>
+          <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>Indicadores reales de cumplimiento documental de la flota.</p>
         </div>
         <button
           data-onboarding="reports-export"
           onClick={handleExportCSV}
+          disabled={vehiculos.length === 0}
           className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition-colors ${
-            isDarkMode
+            vehiculos.length === 0
+              ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
+              : isDarkMode
               ? 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
               : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
           }`}
@@ -199,8 +203,18 @@ export default function ReportesPage() {
         </button>
       </div>
 
+      {vehiculos.length === 0 && conductores.length === 0 && soats.length === 0 && rtms.length === 0 && (
+        <EmptyState
+          icon={BarChart3}
+          title="Aún no hay información suficiente para generar reportes"
+          description="Registra vehículos, conductores y documentos para visualizar indicadores de cumplimiento."
+          actionLabel="Agregar vehículo"
+          actionTo="/vehiculos"
+        />
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        <MetricCard icon={Car} label="Vehiculos" value={vehiculos.length} hint="Registrados" isDarkMode={isDarkMode} />
+        <MetricCard icon={Car} label="Vehículos" value={vehiculos.length} hint="Registrados" isDarkMode={isDarkMode} />
         <MetricCard icon={Users} label="Conductores" value={conductores.length} hint="Registrados" isDarkMode={isDarkMode} />
         <MetricCard icon={ShieldCheck} label="SOAT" value={soats.length} hint="Documentos" isDarkMode={isDarkMode} />
         <MetricCard icon={FileText} label="RTM" value={rtms.length} hint="Revisiones" isDarkMode={isDarkMode} />
@@ -209,7 +223,7 @@ export default function ReportesPage() {
 
       <section className="space-y-4">
         <div>
-          <h2 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Metricas de calidad del sistema</h2>
+          <h2 className={`text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Métricas de calidad del sistema</h2>
         </div>
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           {qualityMetrics.map((metric) => (
@@ -226,18 +240,18 @@ export default function ReportesPage() {
         }`}>
           <div className="absolute top-0 right-0 w-64 h-64 bg-syntix-green rounded-full opacity-20 blur-3xl -mr-20 -mt-20" />
           <div className="relative z-10">
-            <h3 className="text-lg font-medium text-gray-300 mb-2">Cumplimiento Total</h3>
+            <h3 className="text-lg font-medium text-gray-300 mb-2">Cumplimiento total</h3>
             <div className="flex items-end gap-2">
               <span className="text-6xl font-black text-syntix-green">{cumplimiento}%</span>
             </div>
-            <p className="mt-4 text-gray-400">Vehiculos al dia segun la Regla de Oro, incluyendo documentos faltantes</p>
+            <p className="mt-4 text-gray-400">Vehículos al día según la regla de cumplimiento, incluyendo documentos faltantes</p>
           </div>
         </div>
 
         <div data-onboarding="reports-distribution-card" className={`flex flex-col justify-center rounded-2xl border p-8 shadow-sm ${
           isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'
         }`}>
-          <h3 className={`mb-6 text-lg font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Distribucion Documental</h3>
+          <h3 className={`mb-6 text-lg font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Distribución documental</h3>
           <div className="space-y-4">
             <StatusBar label={getStatusLabel('verde')} value={stateStats.verde} total={stateStats.total} colorClass="bg-syntix-green" textClass="text-syntix-green" isDarkMode={isDarkMode} />
             <StatusBar label={getStatusLabel('amarillo')} value={stateStats.amarillo} total={stateStats.total} colorClass="bg-yellow-500" textClass="text-yellow-500" isDarkMode={isDarkMode} />
@@ -248,8 +262,8 @@ export default function ReportesPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ReportSection
-          title={`Alertas de vehiculos (${vehicleAlerts.length})`}
-          emptyMessage="No hay alertas de vehiculos para reportar."
+          title={`Alertas de vehículos (${vehicleAlerts.length})`}
+          emptyMessage="No hay alertas de vehículos para reportar."
           alerts={vehicleAlerts}
           isDarkMode={isDarkMode}
         />
@@ -264,7 +278,7 @@ export default function ReportesPage() {
       <div className={`rounded-2xl border p-6 shadow-sm ${
         isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'
       }`}>
-        <h3 className={`mb-4 text-lg font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Resumen Documental</h3>
+        <h3 className={`mb-4 text-lg font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Resumen documental</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <DocumentSummary title="SOAT" stats={documentStats.soat} alerts={alertStats.soat} isDarkMode={isDarkMode} />
           <DocumentSummary title="RTM" stats={documentStats.rtm} alerts={alertStats.rtm} isDarkMode={isDarkMode} />
@@ -299,7 +313,7 @@ function renderQualityMetricCard(metric, isDarkMode) {
 
       <div className={`mt-4 space-y-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
         <p>
-          <span className={`block text-xs font-bold uppercase ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Interpretacion</span>
+          <span className={`block text-xs font-bold uppercase ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Interpretación</span>
           {metric.interpretation}
         </p>
         <p>
@@ -307,7 +321,7 @@ function renderQualityMetricCard(metric, isDarkMode) {
           {metric.impact}
         </p>
         <p>
-          <span className={`block text-xs font-bold uppercase ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Accion de mejora</span>
+          <span className={`block text-xs font-bold uppercase ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Acción de mejora</span>
           {metric.improvementAction}
         </p>
       </div>

@@ -11,6 +11,7 @@ import {
   normalizeDocumentCode,
   normalizePlate,
 } from '@/utils/colombiaFormats.js';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const CDAS_DEMO = [
   'CDA Bogota Norte',
@@ -38,6 +39,7 @@ const createInitialFormData = () => ({
 export default function AddRtmModal({ isOpen, onClose }) {
   const { vehiculos } = useVehicles();
   const { addRtm } = useRtm();
+  const toast = useToast();
   const [formData, setFormData] = useState(createInitialFormData);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -64,7 +66,7 @@ export default function AddRtmModal({ isOpen, onClose }) {
     setError('');
 
     if (!formData.vehiculoId) {
-      setError('Seleccione un vehiculo asociado a la RTM.');
+      setError('Seleccione un vehículo asociado a la RTM.');
       return;
     }
 
@@ -92,12 +94,12 @@ export default function AddRtmModal({ isOpen, onClose }) {
     }
 
     if (!isValidDateValue(formData.fechaExpedicion) || !isValidDateValue(formData.fechaVencimiento)) {
-      setError('Seleccione fechas validas para la RTM.');
+      setError('Seleccione fechas válidas para la RTM.');
       return;
     }
 
     if (!isDateRangeValid(formData.fechaExpedicion, formData.fechaVencimiento)) {
-      setError('La fecha de vencimiento no puede ser anterior a la fecha de expedicion.');
+      setError('La fecha de vencimiento no puede ser anterior a la fecha de expedición.');
       return;
     }
 
@@ -113,6 +115,7 @@ export default function AddRtmModal({ isOpen, onClose }) {
         resultado: formData.resultado,
         observaciones: formData.observaciones.trim(),
       });
+      toast.success('RTM registrada correctamente.');
       handleClose();
     } catch (err) {
       setError(err.response?.data?.error || 'Error al guardar la RTM. Intenta de nuevo.');
@@ -142,7 +145,7 @@ export default function AddRtmModal({ isOpen, onClose }) {
           )}
 
           <div>
-            <label htmlFor="rtm-vehiculo" className="block text-sm font-bold text-gray-700 mb-1">Vehiculo</label>
+            <label htmlFor="rtm-vehiculo" className="block text-sm font-bold text-gray-700 mb-1">Vehículo</label>
             <select
               id="rtm-vehiculo"
               required
@@ -161,7 +164,7 @@ export default function AddRtmModal({ isOpen, onClose }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="rtm-numero-certificado" className="block text-sm font-bold text-gray-700 mb-1">Numero de certificado RTM</label>
+              <label htmlFor="rtm-numero-certificado" className="block text-sm font-bold text-gray-700 mb-1">Número de certificado RTM</label>
               <input
                 id="rtm-numero-certificado"
                 type="text"
@@ -193,7 +196,7 @@ export default function AddRtmModal({ isOpen, onClose }) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="rtm-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha expedicion</label>
+              <label htmlFor="rtm-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha de expedición</label>
               <input
                 id="rtm-fecha-expedicion"
                 type="date"
@@ -250,7 +253,7 @@ export default function AddRtmModal({ isOpen, onClose }) {
               className="bg-syntix-navy text-white px-6 py-2 rounded-lg font-medium hover:opacity-90 flex items-center gap-2 disabled:opacity-60"
             >
               <Save className="w-4 h-4" />
-              {saving ? 'Guardando...' : 'Guardar'}
+              {saving ? 'Guardando...' : 'Registrar RTM'}
             </button>
           </div>
         </form>
