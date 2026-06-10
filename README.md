@@ -3,6 +3,290 @@
 
 <img src="docs/Entrega-Final/evidencias/logo_syntix_drivecontrol.png" alt="DriveControl - Fleet Compliance Platform" width="520"/>
 
+<h1>DriveControl</h1>
+
+<h3>Fleet compliance made simple — centralized document tracking, alerts and operational visibility for vehicle fleets.</h3>
+
+</div>
+
+---
+## Table of Contents
+
+- [Overview](#overview)
+- [Problem](#problem)
+- [Solution](#solution)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Environment Variables](#environment-variables)
+- [Getting Started](#getting-started)
+- [Common Commands](#common-commands)
+- [Testing & Quality](#testing--quality)
+- [Security Notes](#security-notes)
+- [Deployment (Docker)](#deployment-docker)
+- [Screenshots / Demo](#screenshots--demo)
+- [Credits & License](#credits--license)
+
+---
+## Overview
+
+DriveControl is a web platform that helps fleet operators centralize document compliance and operational visibility. Manage vehicles, drivers, SOAT and RTM records, run validations, receive expiration alerts, and keep an auditable validation history — all from a single dashboard.
+
+Designed for small and mid-sized fleets, DriveControl reduces manual tracking, prevents missed renewals, and provides role-based controls and audit trails for compliance-sensitive operations.
+## Problem
+
+Many fleet operations still rely on spreadsheets, chats, or informal reminders to track critical documents. This manual approach increases the risk of:
+
+- Missed SOAT/RTM expirations and regulatory exposure
+- Lost or inconsistent driver/vehicle assignment records
+- Poor auditability for compliance checks
+- Operational downtime from expired documentation
+
+DriveControl addresses these pain points by centralizing records, alerts and validation history.
+## Solution
+
+DriveControl provides:
+
+- A centralized dashboard for vehicle and driver records
+- SOAT and RTM lifecycle tracking with automated expiration alerts
+- Authentication (JWT), Google OAuth, and account recovery with OTP flows
+- Role-aware access and ownership-scoped data isolation (implemented at API level)
+- Validation history and audit logs for traceability
+- Docker Compose for local orchestration and reproducible CI pipelines
+
+The stack is built with a React/Vite frontend, a Node.js/Express API and MongoDB persistence. CI pipelines and quality checks are provided via GitHub Actions.
+## Key Features
+
+- Vehicle management (CRUD, assignment)
+- Driver management (CRUD, license tracking)
+- SOAT & RTM lifecycle tracking with status computation
+- Expiration alerts and consolidated alerts center
+- Authentication: JWT, Google OAuth integration, account recovery and OTP flows
+- Ownership-scoped data isolation via `ownerEmail` and API checks
+- Validation history and audit notes
+- Operational dashboard and reports/metrics
+- Responsive, mobile-friendly UI
+- Docker Compose for local development and CI validation
+
+Note: RUNT validation is an academic simulation included for demo/testing only.
+## Architecture
+
+The project uses a standard three-layer architecture:
+
+```mermaid
+flowchart LR
+    User --> Frontend[apps/web: React + Vite]
+    Frontend --> API[backend: Node.js + Express]
+    API --> Mongo[(MongoDB)]
+
+    subgraph Docker
+        Frontend
+        API
+        Mongo
+    end
+
+    CI[GitHub Actions] --> Checks[Lint & Tests]
+    CI --> DockerValidation[Compose build & healthchecks]
+```
+
+By default the frontend proxies `/api` requests to the backend. Docker Compose starts the frontend, backend and an embedded MongoDB for local workflows.
+## Tech Stack
+
+Frontend
+
+- React 18, Vite
+- Tailwind CSS, Lucide icons
+- Vitest for unit tests
+
+Backend
+
+- Node.js, Express
+- Mongoose (MongoDB ODM)
+- JWT-based auth, Nodemailer for email flows
+
+DevOps / Quality
+
+- Docker & Docker Compose
+- Makefile orchestration
+- ESLint, Vitest, backend tests
+- GitHub Actions pipelines (CI), optional SonarCloud integration
+## Getting Started
+
+Requirements
+
+- Git
+- Node.js (>=18 recommended) and npm
+- Docker & Docker Compose (for containerized flows)
+
+Clone repository
+
+```bash
+git clone https://github.com/Sarm-m/SYNTIXTECH.git
+cd SYNTIXTECH
+```
+
+Run with Docker (recommended)
+
+```bash
+make build
+make up
+```
+
+Stop
+
+```bash
+make down
+```
+
+Run local development (npm)
+
+```bash
+make dev
+```
+
+Health check (waits for services)
+
+```bash
+make health
+```
+## Local Development
+
+Install dependencies:
+
+```sh
+npm --prefix apps/web ci
+npm --prefix backend ci
+```
+
+Run local npm development mode:
+
+```sh
+make dev
+```
+
+This starts both backend and frontend through npm on `http://localhost:3000` after shutting down Docker containers for this project. It is an alternative development flow; the normal execution flow is `make build` followed by `make up`.
+
+Run backend checks:
+
+```sh
+npm --prefix backend test
+node --check backend/server.js
+```
+
+For non-Docker backend development, copy the example environment file and keep real values untracked:
+
+```sh
+cp backend/.env.example backend/.env
+```
+
+Do not commit real `.env` files.
+## Environment Variables
+
+Backend variables belong in the process environment, `backend/.env`, or a local root `.env`.
+
+The backend must not depend on `apps/web/.env` for secrets.
+
+Frontend variables must use the `VITE_*` prefix because Vite exposes them to browser code.
+
+Common frontend variables:
+
+```txt
+VITE_API_URL=
+VITE_GOOGLE_CLIENT_ID=
+VITE_ENABLE_LOCAL_AUTH_FALLBACK=
+```
+
+Common backend variables:
+
+```txt
+NODE_ENV=
+PORT=
+MONGO_URI=
+JWT_SECRET=
+EMAIL_USER=
+EMAIL_PASS=
+GOOGLE_CLIENT_ID=
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+```
+
+Use placeholders in example files only. Real values must be configured locally or through GitHub Actions secrets.
+
+See:
+
+- [docs/security/secrets-and-ci.md](docs/security/secrets-and-ci.md)
+- [docs/environment.md](docs/environment.md)
+## Data Persistence
+
+All fleet entities (vehicles, drivers, SOAT, RTM, validations) are persisted in MongoDB and scoped by ownership. The primary ownership field enforced by the API is `ownerEmail`.
+
+The backend enforces access control using the authenticated JWT; the frontend should never be considered a trust boundary for business data.
+
+## Testing & Quality
+
+Available validation commands (examples executed from repository root):
+
+```bash
+npm run secrets:check            # scans for accidentally tracked secrets
+npm run lint                     # runs ESLint for frontend
+npm test                         # runs backend and frontend tests
+npm run build                    # builds frontend production assets
+```
+
+Notes from local validation run performed in this workspace:
+
+- `npm run secrets:check`: no tracked secret-like files found.
+- `npm run lint`: ran ESLint (no immediate fatal errors reported).
+- `npm test`: backend tests reported missing SMTP environment variables (`EMAIL_USER`, `EMAIL_PASS`) in this environment.
+
+If running tests locally, ensure backend `.env` contains valid SMTP values or mock them for CI.
+## Security Notes
+
+- Never commit real `.env` files. Use the example files as templates and store secrets in CI provider secrets.
+- Rotate credentials immediately if they are exposed.
+- The API scopes data by `ownerEmail` and requires JWT authentication for protected routes.
+- The backend includes rate-limiting and basic sanitization middleware where applicable — review `backend` code for details.
+- Use `npm run secrets:check` before publishing changes.
+## Deployment (Docker)
+
+The repository includes `docker-compose.yml` and a `Makefile` for local orchestration. Typical flow:
+
+```bash
+make build   # build images
+make up      # run stack in background
+make health  # check service health
+make down    # stop and cleanup
+```
+
+Docker Compose wires frontend, backend and a local MongoDB instance for development and CI validation.
+## Screenshots / Demo
+
+Screenshots and evidences used during academic development are stored in `docs/Entrega-Final/evidencias/` and are referenced throughout this README. Add or update captures as UI evolves.
+
+Example visual assets used in this README:
+
+![Landing page](docs/Entrega-Final/evidencias/37_landing_publica_home.png)
+![Operational dashboard](docs/Entrega-Final/evidencias/38_dashboard_operativo.png)
+
+## Credits & License
+
+This project and repository contain work produced during an academic project and later refinements. See `docs/Entrega-Final/` for evidence captured during deliveries.
+
+License: The repository includes an MIT license. See [LICENSE](LICENSE) for details.
+
+---
+
+If you want, I can also:
+
+- run tests again with mocked SMTP settings
+- add a small CONTRIBUTING guide for local development
+<div align="center">
+<div align="center">
+
+<img src="docs/Entrega-Final/evidencias/logo_syntix_drivecontrol.png" alt="DriveControl - Fleet Compliance Platform" width="520"/>
+
 # DriveControl
 
 ### Fleet compliance, document tracking, and operational visibility in one platform.
