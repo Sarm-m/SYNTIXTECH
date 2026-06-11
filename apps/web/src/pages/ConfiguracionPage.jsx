@@ -269,7 +269,7 @@ export default function ConfiguracionPage() {
     } catch (error) {
       console.error('Error validando respaldo.', error);
       setImportPreview(null);
-      showMessage('error', error.message || 'El archivo no es un respaldo valido de Drive Control.');
+      showMessage('error', error.message || 'El archivo no es un respaldo valido de DriveControl.');
     } finally {
       setIsBusy(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -368,7 +368,7 @@ export default function ConfiguracionPage() {
 
       <div className="space-y-6 max-w-4xl">
       <Helmet>
-        <title>Configuracion | SYNTIX Drive Control</title>
+        <title>Configuracion | DriveControl</title>
       </Helmet>
 
       <div data-onboarding="settings-header">

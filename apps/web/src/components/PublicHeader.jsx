@@ -194,7 +194,10 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
                 className="group flex items-center gap-3 text-xl font-extrabold tracking-tight text-slate-100 sm:text-2xl"
               >
                 <span className="syntix-logo-mark" aria-hidden="true"><span /><span /></span>
-                <span>SYNTIX <span className="text-blue-400">TECH</span></span>
+                <span className="flex flex-col leading-none">
+                  <span>Drive<span className="text-blue-400">Control</span></span>
+                  <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-500">by SYNTIX TECH</span>
+                </span>
               </Link>
             </div>
 

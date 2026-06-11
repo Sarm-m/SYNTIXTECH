@@ -36,7 +36,7 @@ export default function Header({ toggleSidebar }) {
           <Menu className="w-5 h-5" />
         </button>
         <div className="hidden lg:flex items-center gap-2 text-sm font-medium text-gray-300">
-          <span>Drive Control</span>
+          <span>DriveControl</span>
           <span className="text-gray-500">/</span>
           <span className="text-white capitalize">{currentPage.replace('-', ' ')}</span>
         </div>

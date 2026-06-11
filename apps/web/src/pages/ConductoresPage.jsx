@@ -102,7 +102,7 @@ export default function ConductoresPage() {
   return (
     <div className="space-y-6">
       <Helmet>
-        <title>Conductores | SYNTIX Drive Control</title>
+        <title>Conductores | DriveControl</title>
       </Helmet>
 
       <div data-onboarding="conductors-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

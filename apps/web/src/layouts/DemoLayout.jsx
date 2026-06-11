@@ -16,10 +16,10 @@ import { DemoBanner } from '@/components/UI/SaasUI.jsx';
 
 const navItems = [
   { path: '/demo/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/demo/alertas', label: 'Alertas', icon: BellRing },
   { path: '/demo/vehiculos', label: 'Vehículos', icon: Car },
   { path: '/demo/conductores', label: 'Conductores', icon: Users },
   { path: '/demo/documentos', label: 'Documentos', icon: FileText },
-  { path: '/demo/alertas', label: 'Alertas', icon: BellRing },
   { path: '/demo/validacion-runt', label: 'Validación RUNT', icon: Search },
   { path: '/demo/reportes', label: 'Reportes', icon: BarChart3 },
 ];
@@ -66,7 +66,7 @@ export default function DemoLayout() {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Recorrido de producto</p>
               <p className="text-sm font-bold">Datos ficticios, experiencia real</p>
             </div>
-            <Link to="/#contacto" className="btn-outline min-h-10 shrink-0 whitespace-nowrap border-white/15 px-3 text-xs text-white hover:bg-white/15 sm:px-4 sm:text-sm">Solicitar acceso</Link>
+            <Link to="/" className="btn-outline min-h-10 shrink-0 whitespace-nowrap border-white/15 px-3 text-xs text-white hover:bg-white/15 sm:px-4 sm:text-sm">Registrarse</Link>
           </header>
           <DemoBanner />
           <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8">

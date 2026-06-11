@@ -134,7 +134,7 @@ export default function DocumentosPage() {
   return (
     <div className="space-y-6">
       <Helmet>
-        <title>Documentos | SYNTIX Drive Control</title>
+        <title>Documentos | DriveControl</title>
       </Helmet>
 
       <div data-onboarding="documents-header">

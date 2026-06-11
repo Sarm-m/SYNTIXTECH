@@ -33,8 +33,9 @@ export default function PublicFooter() {
           </div>
         </div>
       </div>
-      <div className="border-t border-slate-800 px-4 py-5 text-center text-xs text-slate-500">
-        SYNTIX TECH · DriveControl v1.0.0
+      <div className="border-t border-slate-800 px-4 py-5 text-center text-xs leading-6 text-slate-500">
+        <p>DriveControl — desarrollado por Sarm</p>
+        <p>© 2026 SYNTIX TECH. Todos los derechos reservados.</p>
       </div>
     </footer>
   );

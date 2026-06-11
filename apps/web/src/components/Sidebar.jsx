@@ -10,14 +10,8 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
   const { totalActiveAlerts, isReady, isLoading } = useAlerts();
   const { isDarkMode } = useTheme();
 
-  // Perfil quedó primero para reforzar que es la nueva puerta de entrada del usuario
-  // a sus preferencias y datos de cuenta.
   const navItems = [
-    { path: '/perfil', icon: User, label: 'Perfil' },
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/vehiculos', icon: Car, label: 'Vehículos' },
-    { path: '/conductores', icon: Users, label: 'Conductores' },
-    { path: '/documentos', icon: FileText, label: 'Documentos' },
     {
       path: '/alertas',
       icon: BellRing,
@@ -25,8 +19,12 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
       badge: isReady ? totalActiveAlerts : null,
       badgeLoading: isLoading,
     },
+    { path: '/vehiculos', icon: Car, label: 'Vehículos' },
+    { path: '/conductores', icon: Users, label: 'Conductores' },
+    { path: '/documentos', icon: FileText, label: 'Documentos' },
     { path: '/validacion-runt', icon: Search, label: 'Validación RUNT' },
     { path: '/reportes', icon: BarChart3, label: 'Reportes' },
+    { path: '/perfil', icon: User, label: 'Perfil' },
     { path: '/configuracion', icon: Settings, label: 'Configuración' },
   ];
 
@@ -50,8 +48,9 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
         <div className={`flex h-16 items-center justify-between border-b px-6 text-white ${
             isDarkMode ? 'border-slate-800 bg-[#020617]' : 'border-blue-400/10 bg-[linear-gradient(120deg,#050B18,#08162E_60%,#11203A)]'
           }`}>
-          <Link to="/" className="font-bold text-xl tracking-wider hover:opacity-80 transition-opacity cursor-pointer">
-            SYNTIX <span className="text-blue-400">TECH</span>
+          <Link to="/" className="flex flex-col leading-none hover:opacity-80 transition-opacity cursor-pointer">
+            <span className="text-lg font-black tracking-tight">Drive<span className="text-blue-400">Control</span></span>
+            <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">SYNTIX TECH</span>
           </Link>
           <button
             onClick={toggleSidebar}

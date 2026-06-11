@@ -84,7 +84,7 @@ export default function AlertasPage() {
   return (
     <div className="space-y-6">
       <Helmet>
-        <title>Alertas | SYNTIX Drive Control</title>
+        <title>Alertas | DriveControl</title>
       </Helmet>
 
       <div data-onboarding="alerts-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
