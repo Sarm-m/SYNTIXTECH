@@ -91,7 +91,6 @@ const startMongoIfUseful = async () => {
   const dockerCheck = spawnSync('docker', ['--version'], {
     cwd: repoRoot,
     encoding: 'utf8',
-    shell: isWindows,
   });
 
   if (dockerCheck.status !== 0) {
@@ -104,7 +103,6 @@ const startMongoIfUseful = async () => {
   const composeResult = spawnSync('docker', ['compose', 'up', '-d', 'mongodb'], {
     cwd: repoRoot,
     stdio: 'inherit',
-    shell: isWindows,
   });
 
   if (composeResult.status !== 0) {
@@ -127,6 +125,7 @@ const runWebDev = () => {
   const child = spawn(npmCommand, ['--prefix', 'apps/web', 'run', 'dev'], {
     cwd: repoRoot,
     stdio: 'inherit',
+    // Windows necesita cmd.exe para ejecutar el shim npm.cmd; comando y argumentos son constantes.
     shell: isWindows,
   });
 

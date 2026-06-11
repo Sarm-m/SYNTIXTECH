@@ -24,13 +24,14 @@ concurrency:
   group: auth-ci-cd-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   frontend_ci:
     name: Frontend CI (lint + build)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         # Todos los comandos de esta job se resuelven desde el frontend.
@@ -38,10 +39,10 @@ jobs:
 
     steps:
       - name: Checkout repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: npm
@@ -59,6 +60,8 @@ jobs:
   backend_ci:
     name: Backend CI (instalacion + validacion)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         # Esta job asume un backend Node separado, por eso cambia de carpeta antes de validar.
@@ -66,10 +69,10 @@ jobs:
 
     steps:
       - name: Checkout repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: npm
@@ -102,7 +105,7 @@ jobs:
             exit 0
           fi
 
-          curl -fsS -X POST "$BACKEND_DEPLOY_HOOK_URL"
+          curl --fail --silent --show-error --request POST "$BACKEND_DEPLOY_HOOK_URL"
           echo "Deploy de backend solicitado correctamente."
 
   deploy_frontend:
@@ -122,7 +125,7 @@ jobs:
             exit 0
           fi
 
-          curl -fsS -X POST "$FRONTEND_DEPLOY_HOOK_URL"
+          curl --fail --silent --show-error --request POST "$FRONTEND_DEPLOY_HOOK_URL"
           echo "Deploy de frontend solicitado correctamente."
 
   notify:

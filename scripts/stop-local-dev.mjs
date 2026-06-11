@@ -42,12 +42,16 @@ const getPosixProcesses = () => {
   return result.stdout
     .split(/\r?\n/)
     .map((line) => {
-      const match = line.match(/^\s*(\d+)\s+(\d+)\s+(.+)$/);
-      if (!match) return null;
+      const trimmed = line.trim();
+      const firstSeparator = trimmed.indexOf(' ');
+      const remaining = trimmed.slice(firstSeparator + 1).trimStart();
+      const secondSeparator = remaining.indexOf(' ');
+      if (firstSeparator <= 0 || secondSeparator <= 0) return null;
 
-      const pid = Number(match[1]);
-      const ppid = Number(match[2]);
-      const command = match[3];
+      const pid = Number(trimmed.slice(0, firstSeparator));
+      const ppid = Number(remaining.slice(0, secondSeparator));
+      const command = remaining.slice(secondSeparator + 1).trimStart();
+      if (!Number.isInteger(pid) || !Number.isInteger(ppid) || !command) return null;
       let cwd = '';
 
       try {

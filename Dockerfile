@@ -12,10 +12,11 @@ WORKDIR /app/backend
 ENV NODE_ENV=production
 ENV PORT=5000
 
-COPY --from=backend-deps /app/backend/node_modules ./node_modules
-COPY backend/ ./
+COPY --chown=node:node --from=backend-deps /app/backend/node_modules ./node_modules
+COPY --chown=node:node backend/ ./
 
 EXPOSE 5000
 
 # El backend arranca directamente con Node y toma variables del entorno del contenedor.
+USER node
 CMD ["node", "server.js"]

@@ -216,7 +216,7 @@ app.use('/api/auth/email-change/verify', emailChangeVerifyRateLimiter);
 app.get('/api/health/email', async (_req, res) => {
   const smtp = await verificarServicioCorreo();
   const safeSmtp = {
-    configured: smtp.reason !== 'missing_credentials',
+    configured: Boolean(smtp.configured),
     reachable: Boolean(smtp.ok),
   };
 
@@ -508,7 +508,18 @@ const GOOGLE_CLIENT_ID = normalizeText(process.env.GOOGLE_CLIENT_ID);
 // El cliente OAuth de Google solo se crea si el backend tiene client ID configurado.
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidEmail = (value) => {
+  const email = String(value || '').trim();
+  if (!email || email.length > 254 || [...email].some((character) => character.trim() === '')) {
+    return false;
+  }
+
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex !== email.lastIndexOf('@')) return false;
+
+  const domain = email.slice(atIndex + 1);
+  return domain.includes('.') && !domain.startsWith('.') && !domain.endsWith('.');
+};
 
 const DUPLICATE_EMAIL_MESSAGE = 'Ya existe una cuenta con este correo electrónico.';
 
@@ -584,7 +595,7 @@ const findUserByRecoveryIdentifier = async (identifier) => {
   // Este helper habilita recuperación por correo o por teléfono con una sola entrada.
   const normalizedIdentifier = normalizeText(identifier);
 
-  if (EMAIL_REGEX.test(normalizedIdentifier)) {
+  if (isValidEmail(normalizedIdentifier)) {
     const emailNormalizado = normalizeEmail(normalizedIdentifier);
     const usuario = await Usuario.findOne({ email: emailNormalizado });
     return { usuario, tipo: 'email', valor: emailNormalizado };
@@ -972,7 +983,7 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ message: 'El celular debe tener 10 digitos e iniciar por 3.' });
     }
 
-    if (!EMAIL_REGEX.test(emailNormalizado)) {
+    if (!isValidEmail(emailNormalizado)) {
       return res.status(400).json({ message: 'Ingresa un correo electrónico válido.' });
     }
 
@@ -1196,9 +1207,9 @@ app.post('/api/auth/reenviar-codigo', async (req, res) => {
         await enviarCodigoVerificacion(emailNormalizado, usuario.nombre || usuario.empresa, codigo);
       }
     } catch (envioErr) {
-      console.error('Error al enviar codigo:', envioErr.message);
+      console.error('[AUTH] No fue posible enviar el codigo de verificacion.');
       return res.status(500).json({
-        message: `Error al enviar el codigo: ${envioErr.message}`,
+        message: 'No fue posible enviar el codigo de verificacion.',
       });
     }
 
@@ -1485,9 +1496,9 @@ app.post('/api/auth/recuperar-cuenta', async (req, res) => {
           },
         });
       } catch (smsErr) {
-        console.error('Error al enviar SMS de recuperacion:', smsErr.message);
+        console.error('[AUTH] No fue posible enviar el SMS de recuperacion.');
         return res.status(500).json({
-          message: `Error al enviar SMS: ${smsErr.message}`,
+          message: 'No fue posible enviar el codigo de recuperacion por SMS.',
         });
       }
     }
@@ -1496,7 +1507,7 @@ app.post('/api/auth/recuperar-cuenta', async (req, res) => {
       // Canal preferido: correo.
       await enviarCodigoRecuperacion(emailRegistrado, usuario.nombre || usuario.empresa, codigo);
     } catch (emailErr) {
-      console.error('Error al enviar correo de recuperacion:', emailErr.message);
+      console.error('[AUTH] No fue posible enviar el correo de recuperacion.');
 
       // Si correo falla, se intenta SMS con el número normalizado del usuario.
       const smsDestination = buildSmsDestination(usuario.telefono);
@@ -1512,7 +1523,7 @@ app.post('/api/auth/recuperar-cuenta', async (req, res) => {
         canalEntrega = 'sms';
         destinoEnmascarado = maskPhone(smsDestination);
       } catch (smsErr) {
-        console.error('Error al enviar SMS de recuperacion:', smsErr.message);
+        console.error('[AUTH] No fue posible enviar el SMS de recuperacion de respaldo.');
         return res.status(500).json({
           message: 'No fue posible enviar el codigo de recuperacion por correo ni por SMS.',
         });
@@ -1698,7 +1709,7 @@ app.post('/api/auth/email-change/request', requireAuth, async (req, res) => {
     const newEmail = normalizeEmail(req.body.newEmail);
     const currentPassword = normalizeText(req.body.currentPassword);
 
-    if (!newEmail || !EMAIL_REGEX.test(newEmail)) {
+    if (!isValidEmail(newEmail)) {
       return res.status(400).json({ message: 'Ingresa un correo electronico valido.' });
     }
 
@@ -1782,9 +1793,9 @@ app.post('/api/auth/email-change/request', requireAuth, async (req, res) => {
       );
     } catch (envioErr) {
       await EmailChangeOTP.findOneAndDelete({ userId: usuario._id });
-      console.error('Error al enviar codigo de cambio de correo:', envioErr.message);
+      console.error('[AUTH] No fue posible enviar el codigo de cambio de correo.');
       return res.status(500).json({
-        message: `Error al enviar el codigo: ${envioErr.message}`,
+        message: 'No fue posible enviar el codigo de cambio de correo.',
       });
     }
 
@@ -1805,7 +1816,7 @@ app.post('/api/auth/email-change/verify', requireAuth, async (req, res) => {
     const newEmail = normalizeEmail(req.body.newEmail);
     const codigo = normalizeText(req.body.codigo);
 
-    if (!newEmail || !EMAIL_REGEX.test(newEmail)) {
+    if (!isValidEmail(newEmail)) {
       return res.status(400).json({ message: 'Ingresa un correo electronico valido.' });
     }
 
