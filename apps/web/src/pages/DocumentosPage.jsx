@@ -13,8 +13,10 @@ import EditSoatModal from '@/components/EditSoatModal.jsx';
 import EditRtmModal from '@/components/EditRtmModal.jsx';
 import { formatColombianDate, getDocumentStatusReason, getExpirationAlertText, getStatusLabel } from '@/utils/dateUtils.js';
 import { isValidPlate, normalizePlate } from '@/utils/colombiaFormats.js';
+import { ConfirmDialog, EmptyState, PageHeader } from '@/components/UI/SaasUI.jsx';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
-const UNKNOWN_VEHICLE_LABEL = 'Vehiculo no encontrado';
+const UNKNOWN_VEHICLE_LABEL = 'Vehículo no encontrado';
 
 const normalizeSearchText = (value) => String(value ?? '').toLowerCase().trim();
 
@@ -55,6 +57,7 @@ export default function DocumentosPage() {
   const { rtms, removeRtm } = useRtm();
   const { vehiculos } = useVehicles();
   const { isDarkMode } = useTheme();
+  const toast = useToast();
   const { activeModal, openModal, closeModal } = useModalManager();
 
   const [soatEditando, setSoatEditando] = useState(null);
@@ -119,6 +122,9 @@ export default function DocumentosPage() {
     try {
       if (confirmDelete.tipo === 'soat') await removeSoat(confirmDelete.id);
       if (confirmDelete.tipo === 'rtm') await removeRtm(confirmDelete.id);
+      toast.success('Documento eliminado correctamente.');
+    } catch {
+      toast.error('No pudimos eliminar el documento. Intenta nuevamente.');
     } finally {
       setDeleting(false);
       setConfirmDelete(null);
@@ -126,40 +132,35 @@ export default function DocumentosPage() {
   };
 
   return (
-    <div className={`min-h-screen p-8 ${isDarkMode ? 'bg-slate-950' : 'bg-gray-50'}`}>
+    <div className="space-y-6">
       <Helmet>
         <title>Documentos | SYNTIX Drive Control</title>
       </Helmet>
 
-      <div data-onboarding="documents-header" className="mb-8 flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className={`mb-2 text-4xl font-extrabold ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>
-            Gestion de Documentos
-          </h1>
-          <p className={`text-lg ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>Control de SOAT y Tecnomecanica</p>
-        </div>
-        <div className="flex gap-2">
+      <div data-onboarding="documents-header">
+        <PageHeader
+          eyebrow="Cumplimiento documental"
+          title="Gestión de documentos"
+          description="Controla pólizas SOAT y revisiones técnico-mecánicas asociadas a cada vehículo."
+          actions={<>
           <button
             type="button"
             onClick={() => openModal('addDocument')}
             data-onboarding="documents-add-soat"
-            className="bg-syntix-navy text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-syntix-navy/90"
+            className="btn-primary"
           >
-            + SOAT
+            + Registrar SOAT
           </button>
           <button
             type="button"
             onClick={() => openModal('addRtm')}
             data-onboarding="documents-add-rtm"
-            className={`rounded-lg border px-4 py-2 text-sm font-semibold ${
-              isDarkMode
-                ? 'border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800'
-                : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50'
-            }`}
+            className="btn-secondary"
           >
-            + RTM
+            + Registrar RTM
           </button>
-        </div>
+          </>}
+        />
       </div>
 
       <DocumentTableShell
@@ -173,10 +174,29 @@ export default function DocumentosPage() {
         placeholder="Buscar SOAT por placa, poliza, aseguradora, estado o vencimiento..."
         isDarkMode={isDarkMode}
       >
-        <table className="w-full min-w-[1100px]">
+        {filteredSoats.length === 0 ? (
+          <div className="p-4 md:hidden">
+            <EmptyState
+              icon={Shield}
+              title={soats.length > 0 ? 'No encontramos pólizas SOAT' : 'No hay documentos SOAT registrados todavía'}
+              description={soats.length > 0 ? 'Prueba con otro criterio de búsqueda.' : 'Carga el primer SOAT para recibir alertas antes de su vencimiento.'}
+              actionLabel={soats.length > 0 ? undefined : 'Registrar SOAT'}
+              onAction={soats.length > 0 ? undefined : () => openModal('addDocument')}
+              compact
+            />
+          </div>
+        ) : (
+          <div className="space-y-3 p-4 md:hidden">
+            {filteredSoats.map((soat) => {
+              const vehiculo = getVehiculo(soat.vehiculoId);
+              return <DocumentMobileCard key={soat.id} type="SOAT" plate={getVehicleLabel(vehiculo)} code={soat.numeroPoliza} entity={soat.aseguradora} expiration={soat.fechaFinVigencia} status={soat.estado} onEdit={() => setSoatEditando(soat)} onDelete={() => setConfirmDelete({ tipo: 'soat', id: soat.id, nombre: soat.numeroPoliza })} isDarkMode={isDarkMode} />;
+            })}
+          </div>
+        )}
+        <table className="hidden w-full min-w-[1100px] md:table">
           <thead className={`text-left ${isDarkMode ? 'bg-slate-950' : 'bg-gray-50'}`}>
             <tr>
-              <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>Vehiculo</th>
+              <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>Vehículo</th>
               <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>N° Poliza</th>
               <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>Aseguradora</th>
               <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>Inicio</th>
@@ -224,7 +244,6 @@ export default function DocumentosPage() {
                       <RowActions
                         onEdit={() => setSoatEditando(soat)}
                         onDelete={() => setConfirmDelete({ tipo: 'soat', id: soat.id, nombre: soat.numeroPoliza })}
-                        isDarkMode={isDarkMode}
                       />
                     </td>
                   </tr>
@@ -246,10 +265,29 @@ export default function DocumentosPage() {
         placeholder="Buscar RTM por placa, certificado, CDA, resultado, estado o vencimiento..."
         isDarkMode={isDarkMode}
       >
-        <table className="w-full min-w-[1100px]">
+        {filteredRtms.length === 0 ? (
+          <div className="p-4 md:hidden">
+            <EmptyState
+              icon={Wrench}
+              title={rtms.length > 0 ? 'No encontramos revisiones RTM' : 'No hay revisiones RTM registradas todavía'}
+              description={rtms.length > 0 ? 'Prueba con otro criterio de búsqueda.' : 'Registra la primera RTM para mantener su vencimiento bajo control.'}
+              actionLabel={rtms.length > 0 ? undefined : 'Registrar RTM'}
+              onAction={rtms.length > 0 ? undefined : () => openModal('addRtm')}
+              compact
+            />
+          </div>
+        ) : (
+          <div className="space-y-3 p-4 md:hidden">
+            {filteredRtms.map((rtm) => {
+              const vehiculo = getVehiculo(rtm.vehiculoId);
+              return <DocumentMobileCard key={rtm.id} type="RTM" plate={getVehicleLabel(vehiculo)} code={rtm.numeroCertificado} entity={rtm.cda} expiration={rtm.fechaVencimiento} status={rtm.estado} onEdit={() => setRtmEditando(rtm)} onDelete={() => setConfirmDelete({ tipo: 'rtm', id: rtm.id, nombre: rtm.numeroCertificado })} isDarkMode={isDarkMode} />;
+            })}
+          </div>
+        )}
+        <table className="hidden w-full min-w-[1100px] md:table">
           <thead className={`text-left ${isDarkMode ? 'bg-slate-950' : 'bg-gray-50'}`}>
             <tr>
-              <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>Vehiculo</th>
+              <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>Vehículo</th>
               <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>Certificado</th>
               <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>CDA</th>
               <th className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`}>Resultado</th>
@@ -297,7 +335,6 @@ export default function DocumentosPage() {
                       <RowActions
                         onEdit={() => setRtmEditando(rtm)}
                         onDelete={() => setConfirmDelete({ tipo: 'rtm', id: rtm.id, nombre: rtm.numeroCertificado })}
-                        isDarkMode={isDarkMode}
                       />
                     </td>
                   </tr>
@@ -308,33 +345,16 @@ export default function DocumentosPage() {
         </table>
       </DocumentTableShell>
 
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl ${
-            isDarkMode ? 'bg-slate-900 text-slate-100' : 'bg-white'
-          }`}>
-            <h2 className={`mb-2 text-xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Eliminar documento</h2>
-            <p className={`mb-6 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-              Vas a eliminar <span className={`font-bold ${isDarkMode ? 'text-slate-200' : 'text-gray-800'}`}>{confirmDelete.nombre}</span>. Esta accion no se puede deshacer.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => setConfirmDelete(null)} className={`rounded-lg px-4 py-2 font-medium ${
-                isDarkMode ? 'text-slate-300 hover:bg-slate-800' : 'text-gray-600 hover:bg-gray-100'
-              }`}>
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteConfirm}
-                disabled={deleting}
-                className="bg-red-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-600 disabled:opacity-60"
-              >
-                {deleting ? 'Eliminando...' : 'Si, eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={Boolean(confirmDelete)}
+        title="Eliminar documento"
+        description={`Vas a eliminar ${confirmDelete?.nombre || 'este documento'}. Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, eliminar"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDelete(null)}
+        busy={deleting}
+        destructive
+      />
 
       <EditSoatModal isOpen={!!soatEditando} soat={soatEditando} onClose={() => setSoatEditando(null)} />
       <EditRtmModal isOpen={!!rtmEditando} rtm={rtmEditando} onClose={() => setRtmEditando(null)} />
@@ -377,7 +397,7 @@ function DocumentTableShell({
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={placeholder}
-            className={`w-full rounded-lg border py-2 pl-9 pr-4 text-sm outline-none focus:border-syntix-green focus:ring-2 focus:ring-syntix-green ${
+            className={`w-full rounded-lg border py-2 pl-9 pr-4 text-sm outline-none focus:border-syntix-blue focus:ring-2 focus:ring-syntix-blue ${
               isDarkMode
                 ? 'border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500'
                 : 'border-gray-300 bg-white text-gray-900'
@@ -400,17 +420,13 @@ function EmptyRows({ colSpan, hasData, isDarkMode }) {
   );
 }
 
-function RowActions({ onEdit, onDelete, isDarkMode }) {
+function RowActions({ onEdit, onDelete }) {
   return (
     <div className="flex gap-2">
       <button
         type="button"
         onClick={onEdit}
-        className={`rounded-lg p-2 transition-colors ${
-          isDarkMode
-            ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-100'
-            : 'text-gray-400 hover:bg-gray-100 hover:text-syntix-navy'
-        }`}
+        className="btn-icon text-syntix-blue"
         title="Editar"
       >
         <Pencil className="w-4 h-4" />
@@ -418,16 +434,32 @@ function RowActions({ onEdit, onDelete, isDarkMode }) {
       <button
         type="button"
         onClick={onDelete}
-        className={`rounded-lg p-2 transition-colors ${
-          isDarkMode
-            ? 'text-slate-500 hover:bg-red-500/10 hover:text-red-300'
-            : 'text-gray-400 hover:bg-red-50 hover:text-red-500'
-        }`}
+        className="btn-icon text-syntix-red hover:bg-red-50 hover:text-red-700 dark:text-red-300 dark:hover:bg-red-500/10"
         title="Eliminar"
       >
         <Trash2 className="w-4 h-4" />
       </button>
     </div>
+  );
+}
+
+function DocumentMobileCard({ type, plate, code, entity, expiration, status, onEdit, onDelete, isDarkMode }) {
+  return (
+    <article className={`rounded-xl border p-4 shadow-sm ${isDarkMode ? 'border-slate-800 bg-slate-950/50' : 'border-slate-100 bg-white'}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div><p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300">{type}</p><p className={`mt-1 text-lg font-black ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{plate}</p></div>
+        <StatusBadge status={status} />
+      </div>
+      <dl className={`mt-4 grid grid-cols-1 gap-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+        <div><dt className="text-xs font-bold uppercase text-slate-400">Documento</dt><dd className="mt-1 break-words font-semibold">{code}</dd></div>
+        <div><dt className="text-xs font-bold uppercase text-slate-400">Entidad</dt><dd className="mt-1 break-words">{entity || 'Sin dato'}</dd></div>
+        <div><dt className="text-xs font-bold uppercase text-slate-400">Vencimiento</dt><dd className="mt-1">{formatColombianDate(expiration)}</dd></div>
+      </dl>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button type="button" onClick={onEdit} className="btn-secondary min-h-10">Editar</button>
+        <button type="button" onClick={onDelete} className="btn-danger min-h-10">Eliminar</button>
+      </div>
+    </article>
   );
 }
 
@@ -451,6 +483,17 @@ EmptyRows.propTypes = {
 };
 
 RowActions.propTypes = {
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+};
+
+DocumentMobileCard.propTypes = {
+  type: PropTypes.string.isRequired,
+  plate: PropTypes.string.isRequired,
+  code: PropTypes.string.isRequired,
+  entity: PropTypes.string,
+  expiration: PropTypes.string,
+  status: PropTypes.string.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   isDarkMode: PropTypes.bool.isRequired,

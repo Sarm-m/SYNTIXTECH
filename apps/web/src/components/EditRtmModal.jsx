@@ -11,6 +11,7 @@ import {
   normalizeDocumentCode,
   normalizePlate,
 } from '@/utils/colombiaFormats.js';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const CDAS_DEMO = [
   'CDA Bogota Norte',
@@ -37,6 +38,7 @@ const createInitialFormData = () => ({
 export default function EditRtmModal({ isOpen, onClose, rtm }) {
   const { editRtm } = useRtm();
   const { vehiculos } = useVehicles();
+  const toast = useToast();
   const [formData, setFormData] = useState(createInitialFormData);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -65,7 +67,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
     setError('');
 
     if (!rtm.vehiculoId) {
-      setError('Seleccione un vehiculo asociado a la RTM.');
+      setError('Seleccione un vehículo asociado a la RTM.');
       return;
     }
 
@@ -76,12 +78,12 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
 
     const numeroCertificado = normalizeDocumentCode(formData.numeroCertificado);
     if (!numeroCertificado) {
-      setError('El numero de certificado es obligatorio.');
+      setError('El número de certificado es obligatorio.');
       return;
     }
 
     if (!isValidDocumentCode(numeroCertificado)) {
-      setError('El numero de certificado debe ser alfanumerico y tener entre 6 y 30 caracteres.');
+      setError('El número de certificado debe ser alfanumérico y tener entre 6 y 30 caracteres.');
       return;
     }
 
@@ -92,12 +94,12 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
     }
 
     if (!isValidDateValue(formData.fechaExpedicion) || !isValidDateValue(formData.fechaVencimiento)) {
-      setError('Seleccione fechas validas para la RTM.');
+      setError('Seleccione fechas válidas para la RTM.');
       return;
     }
 
     if (!isDateRangeValid(formData.fechaExpedicion, formData.fechaVencimiento)) {
-      setError('La fecha de vencimiento no puede ser anterior a la fecha de expedicion.');
+      setError('La fecha de vencimiento no puede ser anterior a la fecha de expedición.');
       return;
     }
 
@@ -113,6 +115,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
         resultado: formData.resultado,
         observaciones: formData.observaciones.trim(),
       });
+      toast.success('Revisión técnico-mecánica actualizada correctamente.');
       onClose();
     } catch (err) {
       setError(err.response?.data?.error || 'Error al guardar los cambios. Intenta de nuevo.');
@@ -129,7 +132,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
             <Wrench className="w-5 h-5" />
             Editar RTM
           </h2>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button type="button" onClick={onClose} className="btn-icon">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -142,22 +145,22 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
           )}
 
           <div>
-            <span className="document-modal-label block text-sm font-bold mb-1">Vehiculo</span>
-            <div className="document-modal-readonly w-full px-4 py-2 border rounded-lg text-sm">
-              {vehiculo ? `${vehiculo.placa} · ${vehiculo.tipo || 'Otro'}` : 'Vehiculo no encontrado'}
+            <span className="document-modal-label block text-sm font-bold mb-1">Vehículo</span>
+            <div className="document-modal-readonly field-control">
+              {vehiculo ? `${vehiculo.placa} · ${vehiculo.tipo || 'Otro'}` : 'Vehículo no encontrado'}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="edit-rtm-numero-certificado" className="block text-sm font-bold text-gray-700 mb-1">Numero de certificado RTM</label>
+              <label htmlFor="edit-rtm-numero-certificado" className="block text-sm font-bold text-gray-700 mb-1">Número de certificado RTM</label>
               <input
                 id="edit-rtm-numero-certificado"
                 type="text"
                 required
                 value={formData.numeroCertificado}
                 onChange={(e) => setFormData({ ...formData, numeroCertificado: e.target.value.toUpperCase() })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none uppercase"
+                className="field-control uppercase"
               />
             </div>
             <div>
@@ -168,7 +171,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
                 required
                 value={formData.cda}
                 onChange={(e) => setFormData({ ...formData, cda: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
               <datalist id="cdas-rtm-edit">
                 {CDAS_DEMO.map((cda) => (
@@ -180,14 +183,14 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="edit-rtm-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha expedicion</label>
+              <label htmlFor="edit-rtm-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha de expedición</label>
               <input
                 id="edit-rtm-fecha-expedicion"
                 type="date"
                 required
                 value={formData.fechaExpedicion}
                 onChange={(e) => setFormData({ ...formData, fechaExpedicion: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
             <div>
@@ -198,7 +201,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
                 required
                 value={formData.fechaVencimiento}
                 onChange={(e) => setFormData({ ...formData, fechaVencimiento: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
             <div>
@@ -207,7 +210,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
                 id="edit-rtm-resultado"
                 value={formData.resultado}
                 onChange={(e) => setFormData({ ...formData, resultado: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white"
+                className="field-control"
               >
                 {RESULTADOS.map((resultado) => (
                   <option key={resultado} value={resultado}>{resultado}</option>
@@ -222,18 +225,18 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
               id="edit-rtm-observaciones"
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none min-h-20"
+              className="field-control min-h-20"
             />
           </div>
 
           <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg">
+            <button type="button" onClick={onClose} className="btn-ghost">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="bg-syntix-navy text-white px-6 py-2 rounded-lg font-medium hover:opacity-90 flex items-center gap-2 disabled:opacity-60"
+              className="btn-primary px-6"
             >
               <Save className="w-4 h-4" />
               {saving ? 'Guardando...' : 'Guardar cambios'}

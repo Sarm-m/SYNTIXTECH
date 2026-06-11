@@ -10,7 +10,7 @@ import { getExpirationAlertText, getStatusLabel } from '@/utils/dateUtils.js';
 const alertSections = [
   {
     id: 'vehiculos',
-    title: 'Vehiculos',
+    title: 'Vehículos',
     description: 'Alertas documentales asociadas a la flota.',
     groups: [
       { key: 'SOAT', title: 'SOAT' },
@@ -133,7 +133,8 @@ export default function AlertasPage() {
           <div className={`mb-6 rounded-xl border border-dashed py-8 text-center ${
             isDarkMode ? 'border-slate-700 bg-slate-950/60 text-slate-400' : 'border-gray-200 bg-gray-50 text-gray-500'
           }`}>
-            No hay alertas activas para la fecha seleccionada.
+            <p className="font-bold">No hay alertas pendientes</p>
+            <p className="mt-2 text-sm">Cuando un documento esté por vencer o requiera revisión, aparecerá aquí.</p>
           </div>
         )}
 
@@ -243,7 +244,7 @@ function AlertGroup({ title, alerts, isOpen, onToggle, isDarkMode }) {
             <div className={`rounded-lg border border-dashed p-4 text-sm ${
               isDarkMode ? 'border-slate-700 bg-slate-950/60 text-slate-400' : 'border-gray-200 bg-gray-50 text-gray-500'
             }`}>
-              No hay alertas activas en este grupo.
+              No hay alertas pendientes en este grupo.
             </div>
           ) : (
             <div className="space-y-3">

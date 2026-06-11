@@ -29,6 +29,7 @@ const notifyVehiclesUpdated = () => {
 export function useConductors() {
   const [conductores, setConductores] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const { user } = useAuth();
   const { simulatedDate } = useSimulatedDate();
   const [threshold] = useLocalStorage('syntix_threshold', 15);
@@ -41,12 +42,14 @@ export function useConductors() {
     }
 
     setIsLoading(true);
+    setError('');
     try {
       const res = await api.get('/conductores');
 
       setConductores(res.data.map(normalizeConductor));
     } catch (err) {
       console.error('Error cargando conductores', err);
+      setError('No pudimos cargar los conductores. Intenta nuevamente.');
     } finally {
       setIsLoading(false);
     }
@@ -121,9 +124,11 @@ export function useConductors() {
   return {
     conductores: conductorsWithState,
     isLoading,
+    error,
     addConductor,
     updateConductor,
     deleteConductor,
     fetchConductors,
+    refetch: fetchConductors,
   };
 }

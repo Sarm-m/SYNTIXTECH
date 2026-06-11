@@ -95,10 +95,10 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
       if (res.success) {
         onClose();
       } else {
-        setError(res.message || 'Credenciales invalidas');
+        setError(res.message || 'Credenciales inválidas');
       }
     } catch (err) {
-      setError('Error inesperado al iniciar sesion. Intenta nuevamente.');
+      setError('Error inesperado al iniciar sesión. Intenta nuevamente.');
       console.error('Error en login:', err);
     } finally {
       setIsSubmitting(false);
@@ -129,7 +129,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
           setGoogleTelefono('');
           setMode('googleComplete');
         } else {
-          setError(res.message || 'No se pudo iniciar sesion con Google.');
+          setError(res.message || 'No se pudo iniciar sesión con Google.');
         }
       }
     } finally {
@@ -252,7 +252,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
         setRecoveryToken('');
         setResetChannel('');
         setResetDestinationHint('');
-        setNotice(res.message || 'Contrasena actualizada. Ya puedes iniciar sesion.');
+        setNotice(res.message || 'Contraseña actualizada. Ya puedes iniciar sesión.');
         setMode('login');
       } else {
         setError(res.message || 'No se pudo actualizar la contrasena.');
@@ -266,10 +266,10 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   };
 
   const titleByMode = {
-    login: 'Iniciar Sesion',
+    login: 'Iniciar sesión',
     recover: 'Recuperar Cuenta',
     chooseChannel: 'Enviar Codigo',
-    reset: 'Nueva Contrasena',
+    reset: 'Nueva contraseña',
     googleComplete: 'Completar Registro',
   };
 
@@ -294,7 +294,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
                 type="button"
                 onClick={goToLogin}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                aria-label="Volver a iniciar sesion"
+                aria-label="Volver a iniciar sesión"
                 title="Volver"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -305,8 +305,8 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
           <button
             type="button"
             onClick={onClose}
-            className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Cerrar inicio de sesion"
+            className="btn-icon -mr-2"
+            aria-label="Cerrar inicio de sesión"
           >
             <X className="w-6 h-6" />
           </button>
@@ -323,26 +323,26 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
               <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">Correo Electronico</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input id="login-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="admin@empresa.com" />
+                <input id="login-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} className="field-control pl-10" placeholder="admin@empresa.com" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">Contrasena</label>
+              <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input id="login-password" type={showPassword ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="••••••••" />
+                <input id="login-password" type={showPassword ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} className="field-control pl-10 pr-12" placeholder="••••••••" />
                 <button
                   type="button"
                   onClick={() => setShowPassword(prev => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-syntix-green transition-colors"
+                  className="btn-icon absolute right-1 top-1/2 -translate-y-1/2"
                   aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                   title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              <button type="button" onClick={goToRecover} className="mt-2 text-sm text-syntix-green font-semibold hover:underline">
+              <button type="button" onClick={goToRecover} className="mt-2 text-sm font-semibold text-blue-700 hover:text-blue-900 hover:underline">
                 ¿Olvidaste tu contrasena?
               </button>
             </div>
@@ -350,7 +350,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-syntix-navy text-white py-2.5 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors mt-6 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="btn-primary mt-6 w-full"
             >
               {isSubmitting ? (
                 <>
@@ -382,7 +382,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             </div>
 
             <p className="text-center text-sm text-gray-600 mt-4">
-              ¿No tienes cuenta? <button type="button" onClick={onSwitchToRegister} className="text-syntix-green font-semibold hover:underline">Registrate</button>
+              ¿No tienes cuenta? <button type="button" onClick={onSwitchToRegister} className="font-semibold text-blue-700 hover:text-blue-900 hover:underline">Registrate</button>
             </p>
           </form>
         )}
@@ -395,14 +395,14 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
               <label htmlFor="login-recovery-identifier" className="block text-sm font-medium text-gray-700 mb-1">Correo o Telefono</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input id="login-recovery-identifier" type="text" required value={resetIdentifier} onChange={e => setResetIdentifier(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="admin@empresa.com o 3001234567" />
+                <input id="login-recovery-identifier" type="text" required value={resetIdentifier} onChange={e => setResetIdentifier(e.target.value)} className="field-control pl-10" placeholder="admin@empresa.com o 3001234567" />
               </div>
               <p className="mt-2 text-xs text-gray-500">
                 {/* Se deja explícito que ambos canales apuntan a la misma cuenta. */}
                 Puedes iniciar la recuperacion con el correo registrado o con el telefono asociado a tu cuenta.
               </p>
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full bg-syntix-green text-white py-2.5 rounded-lg font-medium hover:bg-syntix-green/90 transition-colors mt-6 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            <button type="submit" disabled={isSubmitting} className="btn-primary mt-6 w-full">
               {isSubmitting ? (<><Loader2 className="w-5 h-5 animate-spin" />Enviando...</>) : 'Continuar'}
             </button>
           </form>
@@ -423,17 +423,17 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
                 type="button"
                 disabled={isSubmitting}
                 onClick={() => handleChannelSelect('email')}
-                className="flex flex-col items-center gap-3 p-5 border-2 border-gray-200 rounded-xl hover:border-syntix-green hover:bg-syntix-green/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="flex flex-col items-center gap-3 p-5 border-2 border-gray-200 rounded-xl hover:border-syntix-blue hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
               >
-                <div className="w-12 h-12 rounded-full bg-syntix-navy/10 group-hover:bg-syntix-green/15 flex items-center justify-center transition-colors">
+                <div className="w-12 h-12 rounded-full bg-syntix-navy/10 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
                   {isSubmitting ? (
                     <Loader2 className="w-6 h-6 text-syntix-navy animate-spin" />
                   ) : (
-                    <Mail className="w-6 h-6 text-syntix-navy group-hover:text-syntix-green transition-colors" />
+                    <Mail className="w-6 h-6 text-syntix-navy group-hover:text-blue-700 transition-colors" />
                   )}
                 </div>
                 <div className="text-center">
-                  <p className="font-semibold text-sm text-gray-800 group-hover:text-syntix-green transition-colors">Correo</p>
+                  <p className="font-semibold text-sm text-gray-800 group-hover:text-blue-700 transition-colors">Correo</p>
                   <p className="text-xs text-gray-500 mt-0.5">electronico</p>
                 </div>
               </button>
@@ -443,17 +443,17 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
                 type="button"
                 disabled={isSubmitting}
                 onClick={() => handleChannelSelect('sms')}
-                className="flex flex-col items-center gap-3 p-5 border-2 border-gray-200 rounded-xl hover:border-syntix-green hover:bg-syntix-green/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="flex flex-col items-center gap-3 p-5 border-2 border-gray-200 rounded-xl hover:border-syntix-blue hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
               >
-                <div className="w-12 h-12 rounded-full bg-syntix-navy/10 group-hover:bg-syntix-green/15 flex items-center justify-center transition-colors">
+                <div className="w-12 h-12 rounded-full bg-syntix-navy/10 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
                   {isSubmitting ? (
                     <Loader2 className="w-6 h-6 text-syntix-navy animate-spin" />
                   ) : (
-                    <Smartphone className="w-6 h-6 text-syntix-navy group-hover:text-syntix-green transition-colors" />
+                    <Smartphone className="w-6 h-6 text-syntix-navy group-hover:text-blue-700 transition-colors" />
                   )}
                 </div>
                 <div className="text-center">
-                  <p className="font-semibold text-sm text-gray-800 group-hover:text-syntix-green transition-colors">SMS</p>
+                  <p className="font-semibold text-sm text-gray-800 group-hover:text-blue-700 transition-colors">SMS</p>
                   <p className="text-xs text-gray-500 mt-0.5">mensaje de texto</p>
                 </div>
               </button>
@@ -480,7 +480,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
                 required
                 value={googleEmpresa}
                 onChange={e => setGoogleEmpresa(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900"
+                className="field-control"
                 placeholder="Mi Empresa S.A.S."
               />
             </div>
@@ -493,7 +493,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
                 required
                 value={googleTelefono}
                 onChange={e => setGoogleTelefono(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900"
+                className="field-control"
                 placeholder="3001234567"
               />
             </div>
@@ -501,7 +501,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-syntix-navy text-white py-2.5 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="btn-primary mt-2 w-full"
             >
               {isSubmitting ? (<><Loader2 className="w-5 h-5 animate-spin" />Creando cuenta...</>) : 'Crear cuenta'}
             </button>
@@ -514,7 +514,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             {notice && <div className="p-3 bg-green-50 text-syntix-green text-sm rounded-lg border border-green-100">{notice}</div>}
 
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <ShieldCheck className="w-4 h-4 text-syntix-green" />
+              <ShieldCheck className="h-4 w-4 text-blue-600" />
               <span>
                 {/* Este texto confirma si el backend tuvo que degradar de email a SMS. */}
                 {resetChannel === 'sms' ? 'SMS enviado a ' : 'Codigo enviado a '}
@@ -524,18 +524,18 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
 
             <div>
               <label htmlFor="login-reset-code" className="block text-sm font-medium text-gray-700 mb-1">Codigo</label>
-              <input id="login-reset-code" type="text" inputMode="numeric" maxLength={6} required value={resetCode} onChange={e => setResetCode(getDigitsOnly(e.target.value).slice(0, 6))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900 text-center tracking-[0.45em] font-semibold" placeholder="000000" />
+              <input id="login-reset-code" type="text" inputMode="numeric" maxLength={6} required value={resetCode} onChange={e => setResetCode(getDigitsOnly(e.target.value).slice(0, 6))} className="field-control text-center font-semibold tracking-[0.45em]" placeholder="000000" />
             </div>
 
             <div>
-              <label htmlFor="login-new-password" className="block text-sm font-medium text-gray-700 mb-1">Nueva Contrasena</label>
+              <label htmlFor="login-new-password" className="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input id="login-new-password" type={showNewPassword ? 'text' : 'password'} required value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="••••••••" />
+                <input id="login-new-password" type={showNewPassword ? 'text' : 'password'} required value={newPassword} onChange={e => setNewPassword(e.target.value)} className="field-control pl-10 pr-12" placeholder="••••••••" />
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(prev => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-syntix-green transition-colors"
+                  className="btn-icon absolute right-1 top-1/2 -translate-y-1/2"
                   aria-label={showNewPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                   title={showNewPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                 >
@@ -545,14 +545,14 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
             </div>
 
             <div>
-              <label htmlFor="login-confirm-password" className="block text-sm font-medium text-gray-700 mb-1">Confirmar Contrasena</label>
+              <label htmlFor="login-confirm-password" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input id="login-confirm-password" type={showNewPassword ? 'text' : 'password'} required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="••••••••" />
+                <input id="login-confirm-password" type={showNewPassword ? 'text' : 'password'} required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="field-control pl-10" placeholder="••••••••" />
               </div>
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="w-full bg-syntix-green text-white py-2.5 rounded-lg font-medium hover:bg-syntix-green/90 transition-colors mt-6 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            <button type="submit" disabled={isSubmitting} className="btn-primary mt-6 w-full">
               {isSubmitting ? (<><Loader2 className="w-5 h-5 animate-spin" />Actualizando...</>) : 'Actualizar contrasena'}
             </button>
           </form>

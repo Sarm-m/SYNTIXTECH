@@ -104,7 +104,7 @@ export default function ValidacionRUNTPage() {
               <input
                 id="runt-search-type-placa"
                 type="radio"
-                value="placa" 
+                value="placa"
                 checked={searchType === 'placa'}
                 onChange={(e) => setSearchType(e.target.value)}
                 className="w-4 h-4"
@@ -115,7 +115,7 @@ export default function ValidacionRUNTPage() {
               <input
                 id="runt-search-type-vin"
                 type="radio"
-                value="vin" 
+                value="vin"
                 checked={searchType === 'vin'}
                 onChange={(e) => setSearchType(e.target.value)}
                 className="w-4 h-4"
@@ -128,12 +128,12 @@ export default function ValidacionRUNTPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div data-onboarding="runt-search-input" className="flex-1 relative">
               <Search className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder={searchType === 'placa' ? 'Ej. ABC-123' : 'Ej. WVWZZZ3CZ9E123456'}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value.toUpperCase())}
-                className={`w-full rounded-xl border-2 py-4 pl-12 pr-4 text-lg font-bold uppercase tracking-wider transition-colors focus:border-syntix-green focus:ring-0 ${
+                className={`w-full rounded-xl border-2 py-4 pl-12 pr-4 text-lg font-bold uppercase tracking-wider transition-colors focus:border-syntix-blue focus:ring-0 ${
                   isDarkMode
                     ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500'
                     : 'border-gray-200 text-gray-900'
@@ -141,11 +141,11 @@ export default function ValidacionRUNTPage() {
                 maxLength={searchType === 'placa' ? 7 : 17}
               />
             </div>
-            <button 
+            <button
               data-onboarding="runt-search-button"
-              type="submit" 
+              type="submit"
               disabled={loading || !searchInput.trim()}
-              className="bg-syntix-navy text-white px-8 py-4 rounded-xl font-bold hover:bg-syntix-navy/90 transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
+              className="btn-primary min-h-14 px-8"
             >
               {loading ? 'Consultando...' : 'Consultar'}
             </button>
@@ -221,7 +221,7 @@ export default function ValidacionRUNTPage() {
         isDarkMode ? 'bg-slate-900' : 'bg-syntix-navy/5'
       }`}>
         <p className={`mb-2 ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>¿Quieres ver todas tus validaciones?</p>
-        <a 
+        <a
           href="/historial-validaciones"
           className={`font-bold hover:underline ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}
         >

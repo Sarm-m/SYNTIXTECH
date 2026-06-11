@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext.jsx';
 export function useValidationHistory() {
   const [validations, setValidations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { user } = useAuth();
 
   // Carga el historial desde MongoDB cuando el usuario inicia sesión
@@ -20,12 +21,14 @@ export function useValidationHistory() {
       return;
     }
     setLoading(true);
+    setError('');
     try {
       const res = await api.get('/validaciones', { params: { email: user.email } });
       // Normalizar _id de Mongo a id para mantener compatibilidad con el resto del código
       setValidations(res.data.map((v) => ({ ...v, id: v._id || v.id })));
     } catch (err) {
       console.error('Error cargando historial RUNT:', err);
+      setError('No pudimos cargar el historial de validaciones. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -163,5 +166,7 @@ export function useValidationHistory() {
     // Data
     validations,
     loading,
+    error,
+    refetch: fetchValidations,
   };
 }

@@ -255,9 +255,7 @@ export default function UserProfilePage() {
   };
 
   const cardClass = isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white';
-  const inputClass = isDarkMode
-    ? 'w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-slate-100 focus:border-syntix-green focus:outline-none focus:ring-2 focus:ring-syntix-green/30'
-    : 'w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 focus:border-syntix-green focus:outline-none focus:ring-2 focus:ring-syntix-green/30';
+  const inputClass = 'field-control';
 
   return (
     <div className="space-y-6">
@@ -284,10 +282,10 @@ export default function UserProfilePage() {
 
           <div className="flex flex-wrap gap-3">
             <ThemeToggle compact label="Modo oscuro" />
-            <Link to="/vehiculos" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-syntix-navy transition hover:bg-gray-100">
+            <Link to="/vehiculos" className="btn-secondary min-h-10">
               Ver vehiculos
             </Link>
-            <Link to="/configuracion" className="rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10">
+            <Link to="/configuracion" className="btn-outline min-h-10 border-white/20 text-white hover:bg-white/10">
               Ir a configuracion
             </Link>
           </div>
@@ -302,7 +300,7 @@ export default function UserProfilePage() {
                   type="button"
                   onClick={handleStartEdit}
                   disabled={!canUseBackend}
-                  className="rounded-xl bg-syntix-green px-4 py-2 text-sm font-semibold text-white transition hover:bg-syntix-green/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-primary"
                 >
                   Editar perfil
                 </button>
@@ -380,7 +378,7 @@ export default function UserProfilePage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-syntix-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                  className="btn-primary"
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Guardar cambios
@@ -413,7 +411,7 @@ export default function UserProfilePage() {
                         setEmailStep('request');
                       }}
                       disabled={!canUseBackend}
-                      className="rounded-xl border border-syntix-green px-4 py-2 text-sm font-semibold text-syntix-green transition hover:bg-syntix-green/10 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="btn-outline"
                     >
                       Cambiar correo
                     </button>
@@ -456,7 +454,7 @@ export default function UserProfilePage() {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="inline-flex items-center gap-2 rounded-xl bg-syntix-green px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                        className="btn-primary"
                       >
                         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                         Enviar codigo
@@ -488,7 +486,7 @@ export default function UserProfilePage() {
                           onChange={(event) => handleOtpChange(index, event.target.value)}
                           onKeyDown={(event) => handleOtpKeyDown(index, event)}
                           onPaste={handleOtpPaste}
-                          className="h-14 w-12 rounded-lg border-2 border-gray-300 text-center text-2xl font-bold text-syntix-navy outline-none focus:border-syntix-green focus:ring-2 focus:ring-syntix-green"
+                          className="h-14 w-12 rounded-lg border-2 border-gray-300 text-center text-2xl font-bold text-syntix-navy outline-none focus:border-syntix-blue focus:ring-2 focus:ring-syntix-blue"
                         />
                       ))}
                     </div>
@@ -496,7 +494,7 @@ export default function UserProfilePage() {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="inline-flex items-center gap-2 rounded-xl bg-syntix-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                        className="btn-primary"
                       >
                         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                         Verificar y cambiar correo

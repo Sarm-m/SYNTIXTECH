@@ -30,6 +30,7 @@ const normalizeSoat = (soat) => {
 export function DocumentsProvider({ children }) {
   const [storedSoats, setStoredSoats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { user } = useAuth();
   const { simulatedDate } = useSimulatedDate();
   const [threshold] = useLocalStorage('syntix_threshold', 15);
@@ -41,11 +42,13 @@ export function DocumentsProvider({ children }) {
       return;
     }
     setLoading(true);
+    setError('');
     try {
       const res = await api.get('/soats');
       setStoredSoats(res.data.map(normalizeSoat));
     } catch (err) {
       console.error('Error cargando SOATs:', err);
+      setError('No pudimos cargar los documentos SOAT. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -92,7 +95,7 @@ export function DocumentsProvider({ children }) {
   };
 
   return (
-    <DocumentsContext.Provider value={{ soats, addSoat, editSoat, removeSoat, loading }}>
+    <DocumentsContext.Provider value={{ soats, addSoat, editSoat, removeSoat, loading, error, refetch: fetchSoats }}>
       {children}
     </DocumentsContext.Provider>
   );

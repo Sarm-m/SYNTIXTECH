@@ -4,6 +4,7 @@ import { X, User, Save } from 'lucide-react';
 import { useConductors } from '@/hooks/useConductors.js';
 import { useVehicles } from '@/hooks/useVehicles.js';
 import { isValidCedula, isValidColombianMobile, sanitizeDocument, sanitizePhone, getVehicleOptionLabel } from '@/utils/colombiaFormats.js';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const createInitialFormData = () => ({
   nombre: '',
@@ -31,6 +32,7 @@ export default function AddConductorModal({
   conductorToEdit = null,
 }) {
   const { conductores, addConductor, updateConductor } = useConductors();
+  const toast = useToast();
   const { vehiculos, assignConductor } = useVehicles();
   const [formData, setFormData] = useState(createInitialFormData);
   const [error, setError] = useState('');
@@ -150,12 +152,14 @@ export default function AddConductorModal({
             await assignConductor(newVehicleId, conductorToEdit.id);
           }
         }
+        toast.success('Conductor actualizado correctamente.');
       } else {
         const newConductor = await addConductor(payload);
 
         if (formData.vehiculoId) {
           await assignConductor(formData.vehiculoId, newConductor.id);
         }
+        toast.success('Conductor creado correctamente.');
       }
 
       handleClose();
@@ -181,7 +185,7 @@ export default function AddConductorModal({
           <button
             type="button"
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="btn-icon"
           >
             <X className="w-6 h-6" />
           </button>
@@ -202,7 +206,7 @@ export default function AddConductorModal({
               required
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+              className="field-control"
               placeholder="Juan Perez"
             />
           </div>
@@ -218,7 +222,7 @@ export default function AddConductorModal({
                 maxLength={10}
                 value={formData.documento}
                 onChange={(e) => setFormData({ ...formData, documento: sanitizeDocument(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+                className="field-control"
                 placeholder="1234567890"
               />
             </div>
@@ -233,19 +237,19 @@ export default function AddConductorModal({
                 maxLength={10}
                 value={formData.telefono}
                 onChange={(e) => setFormData({ ...formData, telefono: sanitizePhone(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+                className="field-control"
                 placeholder="3001234567"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="conductor-vehiculo" className="block text-sm font-bold text-gray-700 mb-1">Vehiculo a asignar</label>
+            <label htmlFor="conductor-vehiculo" className="block text-sm font-bold text-gray-700 mb-1">Vehículo a asignar</label>
             <select
               id="conductor-vehiculo"
               value={formData.vehiculoId}
               onChange={(e) => setFormData({ ...formData, vehiculoId: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900 bg-white"
+              className="field-control"
             >
               <option value="">Sin asignar</option>
               {vehiculosDisponibles.map((vehiculo) => (
@@ -265,7 +269,7 @@ export default function AddConductorModal({
                   id="conductor-categoria"
                   value={formData.categoria}
                   onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900 bg-white"
+                  className="field-control"
                 >
                   <option value="A1">A1</option>
                   <option value="A2">A2</option>
@@ -288,7 +292,7 @@ export default function AddConductorModal({
                   onChange={(e) =>
                     setFormData({ ...formData, fechaVencimiento: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+                  className="field-control"
                 />
               </div>
             </div>
@@ -298,14 +302,14 @@ export default function AddConductorModal({
             <button
               type="button"
               onClick={handleClose}
-              className="min-h-10 rounded-lg px-4 py-2 font-medium text-gray-600 transition-colors hover:bg-gray-100"
+              className="btn-ghost"
             >
               Cancelar
             </button>
 
             <button
               type="submit"
-              className="flex min-h-10 items-center justify-center gap-2 rounded-lg bg-syntix-navy px-6 py-2 font-medium text-white transition-colors hover:bg-syntix-navy/90"
+              className="btn-primary px-6"
             >
               <Save className="w-4 h-4" /> {submitLabel}
             </button>

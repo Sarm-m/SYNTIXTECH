@@ -26,6 +26,7 @@ const notifyVehiclesUpdated = () => {
 export function useVehicles() {
   const [vehiculos, setVehiculos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const { user } = useAuth();
   const { conductores } = useConductors();
   const { soats } = useDocuments();
@@ -39,12 +40,14 @@ export function useVehicles() {
     }
 
     setIsLoading(true);
+    setError('');
     try {
       const res = await api.get('/vehiculos');
 
       setVehiculos(res.data.map(normalizeVehicle));
     } catch (err) {
       console.error('Error cargando vehiculos', err);
+      setError('No pudimos cargar los vehículos. Intenta nuevamente.');
     } finally {
       setIsLoading(false);
     }
@@ -157,10 +160,12 @@ export function useVehicles() {
   return {
     vehiculos: vehiculosCompletos,
     isLoading,
+    error,
     addVehicle,
     updateVehicle,
     deleteVehicle,
     assignConductor,
     fetchVehicles,
+    refetch: fetchVehicles,
   };
 }

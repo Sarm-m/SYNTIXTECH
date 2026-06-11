@@ -31,7 +31,7 @@ export default function ValidacionResultadoCard({
   }
 
   const data = datosRUNT.data;
-  
+
   // Funciones auxiliares para estados
   const getStateColor = (vigente, diasRestantes) => {
     if (!vigente || diasRestantes < 0) return 'rojo';
@@ -41,7 +41,7 @@ export default function ValidacionResultadoCard({
 
   const soatState = getStateColor(data.soat.vigente, data.soat.diasRestantes);
   const rtmState = getStateColor(data.rtm.vigente, data.rtm.diasRestantes);
-  const licenciaState = conductorAsignado ? 
+  const licenciaState = conductorAsignado ?
     getStateColor(conductorAsignado.estado === 'verde', conductorAsignado.diasRestantes) : 'rojo';
 
   // Estas coincidencias ayudan a explicar si el activo consultado sí corresponde con el activo interno.
@@ -214,7 +214,7 @@ export default function ValidacionResultadoCard({
       <button
         onClick={onGuardar}
         disabled={loading}
-        className="w-full bg-syntix-navy text-white py-3 rounded-xl font-bold hover:bg-syntix-navy/90 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+        className="btn-primary w-full"
       >
         <Download className="w-5 h-5" />
         {loading ? 'Guardando...' : 'Guardar esta Validación'}

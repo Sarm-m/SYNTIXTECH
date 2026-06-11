@@ -354,10 +354,6 @@ export default function ConfiguracionPage() {
   const mutedTextClass = isDarkMode ? 'text-slate-400' : 'text-gray-600';
   const panelClass = isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-200 bg-white';
   const softPanelClass = isDarkMode ? 'border-slate-800 bg-slate-950/50' : 'border-gray-200 bg-gray-50';
-  const actionButtonClass = isDarkMode
-    ? 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
-    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100';
-  const primaryButtonClass = 'bg-syntix-navy text-white hover:bg-syntix-navy/90';
 
   return (
     <>
@@ -413,14 +409,10 @@ export default function ConfiguracionPage() {
                   }
                 }}
                 onBlur={handleThresholdBlur}
-                className={`w-full rounded-lg border px-4 py-2 outline-none focus:ring-2 focus:ring-syntix-green ${
-                  isDarkMode
-                    ? 'border-slate-700 bg-slate-950 text-slate-100'
-                    : 'border-gray-300 bg-white text-gray-900'
-                }`}
+                className="field-control"
                 aria-describedby="settings-threshold-help"
               />
-              <button data-onboarding="settings-save-button" onClick={handleThresholdSave} className="bg-syntix-navy text-white px-4 py-2 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2">
+              <button data-onboarding="settings-save-button" onClick={handleThresholdSave} className="btn-primary">
                 <Save className="w-4 h-4" /> Guardar
               </button>
             </div>
@@ -451,11 +443,7 @@ export default function ConfiguracionPage() {
                 key={id}
                 type="button"
                 onClick={() => setActiveDataStep(id)}
-                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                  activeDataStep === id
-                    ? 'border-syntix-green bg-syntix-green text-syntix-navy'
-                    : actionButtonClass
-                }`}
+                className={activeDataStep === id ? 'btn-primary min-h-10 px-3' : 'btn-secondary min-h-10 px-3'}
               >
                 <Icon className="h-4 w-4" /> {label}
               </button>
@@ -502,10 +490,10 @@ export default function ConfiguracionPage() {
               </div>
               <p className={`mb-4 text-sm ${mutedTextClass}`}>Las alertas no se exportan porque se calculan automaticamente desde vencimientos.</p>
               <div className="flex flex-wrap gap-3">
-                <button type="button" data-onboarding="settings-export" onClick={() => handleExportBackup('json')} disabled={isBusy} className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition-colors disabled:opacity-60 ${actionButtonClass}`}>
+                <button type="button" data-onboarding="settings-export" onClick={() => handleExportBackup('json')} disabled={isBusy} className="btn-secondary">
                   <FileJson className="h-4 w-4" /> Exportar JSON
                 </button>
-                <button type="button" onClick={() => handleExportBackup('excel')} disabled={isBusy} className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition-colors disabled:opacity-60 ${actionButtonClass}`}>
+                <button type="button" onClick={() => handleExportBackup('excel')} disabled={isBusy} className="btn-secondary">
                   <FileSpreadsheet className="h-4 w-4" /> Exportar Excel
                 </button>
               </div>
@@ -517,10 +505,10 @@ export default function ConfiguracionPage() {
               <div className={`rounded-lg border p-4 ${panelClass}`}>
                 <p className={`mb-4 text-sm ${mutedTextClass}`}>Primero se valida el archivo y luego eliges si confirmar la importacion.</p>
                 <div className="flex flex-wrap gap-3">
-                  <button type="button" data-onboarding="settings-import" onClick={() => handleChooseImportFile('json')} disabled={isBusy} className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition-colors disabled:opacity-60 ${actionButtonClass}`}>
+                  <button type="button" data-onboarding="settings-import" onClick={() => handleChooseImportFile('json')} disabled={isBusy} className="btn-secondary">
                     <FileJson className="h-4 w-4" /> Importar JSON
                   </button>
-                  <button type="button" onClick={() => handleChooseImportFile('excel')} disabled={isBusy} className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition-colors disabled:opacity-60 ${actionButtonClass}`}>
+                  <button type="button" onClick={() => handleChooseImportFile('excel')} disabled={isBusy} className="btn-secondary">
                     <FileSpreadsheet className="h-4 w-4" /> Importar Excel
                   </button>
                 </div>
@@ -539,7 +527,7 @@ export default function ConfiguracionPage() {
                       ))}
                     </ul>
                   )}
-                  <button type="button" onClick={handleConfirmImportBackup} disabled={isBusy || !importPreview.validation.valid} className={`mt-4 rounded-lg px-4 py-2 text-sm font-bold transition-colors disabled:opacity-60 ${primaryButtonClass}`}>
+                  <button type="button" onClick={handleConfirmImportBackup} disabled={isBusy || !importPreview.validation.valid} className="btn-primary mt-4">
                     Confirmar importacion
                   </button>
                 </div>
@@ -565,16 +553,16 @@ export default function ConfiguracionPage() {
             <div className={`rounded-lg border p-4 ${panelClass}`}>
               <p className={`mb-4 text-sm ${mutedTextClass}`}>Las plantillas vienen vacias; los ejemplos incluyen datos realistas DCV101-DCV110.</p>
               <div className="flex flex-wrap gap-3">
-                <button type="button" onClick={() => handleDownloadTemplate('json')} className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium ${actionButtonClass}`}>
+                <button type="button" onClick={() => handleDownloadTemplate('json')} className="btn-secondary">
                   <FileJson className="h-4 w-4" /> Plantilla JSON
                 </button>
-                <button type="button" onClick={() => handleDownloadTemplate('excel')} className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium ${actionButtonClass}`}>
+                <button type="button" onClick={() => handleDownloadTemplate('excel')} className="btn-secondary">
                   <FileSpreadsheet className="h-4 w-4" /> Plantilla Excel
                 </button>
-                <button type="button" onClick={() => handleDownloadTemplate('json', true)} className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium ${actionButtonClass}`}>
+                <button type="button" onClick={() => handleDownloadTemplate('json', true)} className="btn-secondary">
                   <FileJson className="h-4 w-4" /> Ejemplo JSON
                 </button>
-                <button type="button" onClick={() => handleDownloadTemplate('excel', true)} className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium ${actionButtonClass}`}>
+                <button type="button" onClick={() => handleDownloadTemplate('excel', true)} className="btn-secondary">
                   <FileSpreadsheet className="h-4 w-4" /> Ejemplo Excel
                 </button>
               </div>
@@ -595,11 +583,9 @@ export default function ConfiguracionPage() {
                   id="reset-confirmation"
                   value={resetConfirmation}
                   onChange={(event) => setResetConfirmation(event.target.value)}
-                  className={`rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 ${
-                    isDarkMode ? 'border-red-950 bg-slate-950 text-slate-100' : 'border-red-200 bg-white text-gray-900'
-                  }`}
+                  className="field-control border-red-300 focus:border-syntix-red focus:ring-red-400/20 dark:border-red-950"
                 />
-                <button type="button" data-onboarding="settings-reset" onClick={handleResetData} disabled={isBusy || resetConfirmation !== 'RESTABLECER'} className="flex items-center justify-center gap-2 rounded-lg bg-syntix-red px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-red-600 disabled:opacity-60">
+                <button type="button" data-onboarding="settings-reset" onClick={handleResetData} disabled={isBusy || resetConfirmation !== 'RESTABLECER'} className="btn-danger">
                   <AlertTriangle className="h-4 w-4" /> Restablecer Datos
                 </button>
               </div>

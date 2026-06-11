@@ -420,7 +420,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
               <button
                 type="button"
                 onClick={handleClose}
-                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                className="btn-icon -mr-2"
                 aria-label="Cerrar registro"
               >
                 <X className="w-6 h-6" />
@@ -433,32 +433,32 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                 <label htmlFor="register-company" className="block text-sm font-medium text-gray-700 mb-1">Nombre de Empresa</label>
                 <div className="relative">
                   <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input id="register-company" type="text" required value={formData.empresa} onChange={e => setFormData({...formData, empresa: e.target.value})} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="Mi Empresa SAS" />
+                  <input id="register-company" type="text" required value={formData.empresa} onChange={e => setFormData({...formData, empresa: e.target.value})} className="field-control pl-10" placeholder="Mi Empresa SAS" />
                 </div>
               </div>
               <div>
                 <label htmlFor="register-phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input id="register-phone" type="tel" required value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="3001234567" />
+                  <input id="register-phone" type="tel" required value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} className="field-control pl-10" placeholder="3001234567" />
                 </div>
               </div>
               <div>
                 <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input id="register-email" type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="admin@empresa.com" />
+                  <input id="register-email" type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="field-control pl-10" placeholder="admin@empresa.com" />
                 </div>
               </div>
               <div>
                 <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input id="register-password" type={showPassword ? 'text' : 'password'} required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none text-gray-900" placeholder="••••••••" />
+                  <input id="register-password" type={showPassword ? 'text' : 'password'} required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="field-control pl-10 pr-12" placeholder="••••••••" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(prev => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-syntix-green transition-colors"
+                    className="btn-icon absolute right-1 top-1/2 -translate-y-1/2"
                     aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                     title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                   >
@@ -466,7 +466,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                   </button>
                 </div>
               </div>
-              <button type="submit" disabled={isSubmitting} className="w-full bg-syntix-green text-white py-2.5 rounded-lg font-medium hover:bg-syntix-green/90 transition-colors mt-6 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              <button type="submit" disabled={isSubmitting} className="btn-primary mt-6 w-full">
                 {isSubmitting ? (<><Loader2 className="w-5 h-5 animate-spin" />Registrando...</>) : 'Registrarse'}
               </button>
 
@@ -492,7 +492,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                     type="button"
                     onClick={handleGoogleComplete}
                     disabled={isSubmitting}
-                    className="w-full rounded-lg bg-syntix-navy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-syntix-navy/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="btn-primary w-full"
                   >
                     {isSubmitting ? 'Completando registro...' : 'Completar registro con Google'}
                   </button>
@@ -513,13 +513,13 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
           <>
             <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white p-5 sm:p-6">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-6 h-6 text-syntix-green" />
+                <ShieldCheck className="h-6 w-6 text-blue-600" />
                 <h2 id="register-modal-title" className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
               </div>
               <button
                 type="button"
                 onClick={handleClose}
-                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                className="btn-icon -mr-2"
                 aria-label="Cerrar verificacion"
               >
                 <X className="w-6 h-6" />
@@ -539,17 +539,17 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => handleChannelSelect('email')}
-                  className="flex flex-col items-center gap-3 p-5 border-2 border-gray-200 rounded-xl hover:border-syntix-green hover:bg-syntix-green/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                  className="flex flex-col items-center gap-3 p-5 border-2 border-gray-200 rounded-xl hover:border-syntix-blue hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
-                  <div className="w-12 h-12 rounded-full bg-syntix-navy/10 group-hover:bg-syntix-green/15 flex items-center justify-center transition-colors">
+                  <div className="w-12 h-12 rounded-full bg-syntix-navy/10 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
                     {isSubmitting ? (
                       <Loader2 className="w-6 h-6 text-syntix-navy animate-spin" />
                     ) : (
-                      <Mail className="w-6 h-6 text-syntix-navy group-hover:text-syntix-green transition-colors" />
+                      <Mail className="w-6 h-6 text-syntix-navy group-hover:text-blue-700 transition-colors" />
                     )}
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold text-sm text-gray-800 group-hover:text-syntix-green transition-colors">Correo</p>
+                    <p className="font-semibold text-sm text-gray-800 group-hover:text-blue-700 transition-colors">Correo</p>
                     <p className="mt-0.5 max-w-full break-all text-xs text-gray-500 sm:max-w-[100px] sm:truncate">{pendingEmail}</p>
                   </div>
                 </button>
@@ -559,17 +559,17 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => handleChannelSelect('sms')}
-                  className="flex flex-col items-center gap-3 p-5 border-2 border-gray-200 rounded-xl hover:border-syntix-green hover:bg-syntix-green/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                  className="flex flex-col items-center gap-3 p-5 border-2 border-gray-200 rounded-xl hover:border-syntix-blue hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
-                  <div className="w-12 h-12 rounded-full bg-syntix-navy/10 group-hover:bg-syntix-green/15 flex items-center justify-center transition-colors">
+                  <div className="w-12 h-12 rounded-full bg-syntix-navy/10 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
                     {isSubmitting ? (
                       <Loader2 className="w-6 h-6 text-syntix-navy animate-spin" />
                     ) : (
-                      <Smartphone className="w-6 h-6 text-syntix-navy group-hover:text-syntix-green transition-colors" />
+                      <Smartphone className="w-6 h-6 text-syntix-navy group-hover:text-blue-700 transition-colors" />
                     )}
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold text-sm text-gray-800 group-hover:text-syntix-green transition-colors">SMS</p>
+                    <p className="font-semibold text-sm text-gray-800 group-hover:text-blue-700 transition-colors">SMS</p>
                     <p className="text-xs text-gray-500 mt-0.5">{pendingTelefono}</p>
                   </div>
                 </button>
@@ -586,13 +586,13 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
           <>
             <div className="sticky top-0 z-10 flex justify-between items-center border-b border-gray-100 bg-white p-5 sm:p-6">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-6 h-6 text-syntix-green" />
+                <ShieldCheck className="h-6 w-6 text-blue-600" />
                 <h2 id="register-modal-title" className="text-2xl font-bold text-syntix-navy">Verificar Cuenta</h2>
               </div>
               <button
                 type="button"
                 onClick={handleClose}
-                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                className="btn-icon -mr-2"
                 aria-label="Cerrar verificacion"
               >
                 <X className="w-6 h-6" />
@@ -632,12 +632,12 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
                     onChange={e => handleOtpChange(index, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(index, e)}
                     onPaste={handleOtpPaste}
-                    className="h-12 min-w-0 rounded-lg border-2 border-gray-300 text-center text-lg font-bold text-syntix-navy outline-none focus:border-syntix-green focus:ring-2 focus:ring-syntix-green sm:h-14 sm:text-2xl"
+                    className="h-12 min-w-0 rounded-lg border-2 border-gray-300 text-center text-lg font-bold text-syntix-navy outline-none focus:border-syntix-blue focus:ring-2 focus:ring-syntix-blue sm:h-14 sm:text-2xl"
                   />
                 ))}
               </div>
 
-              <button type="submit" disabled={isSubmitting || !isCompleteOtp(otp)} className="w-full bg-syntix-green text-white py-2.5 rounded-lg font-medium hover:bg-syntix-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              <button type="submit" disabled={isSubmitting || !isCompleteOtp(otp)} className="btn-primary w-full">
                 {isSubmitting ? (<><Loader2 className="w-5 h-5 animate-spin" />Verificando...</>) : 'Verificar y Activar Cuenta'}
               </button>
 

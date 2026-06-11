@@ -11,6 +11,7 @@ import {
   normalizeDocumentCode,
   normalizePlate,
 } from '@/utils/colombiaFormats.js';
+import { useToast } from '@/contexts/ToastContext.jsx';
 
 const ASEGURADORAS_DEMO = [
   'Seguros Mundial',
@@ -35,6 +36,7 @@ const createInitialFormData = () => ({
 export default function EditSoatModal({ isOpen, onClose, soat }) {
   const { editSoat } = useDocuments();
   const { vehiculos } = useVehicles();
+  const toast = useToast();
   const [formData, setFormData] = useState(createInitialFormData);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -63,7 +65,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
     setError('');
 
     if (!soat.vehiculoId) {
-      setError('Seleccione un vehiculo asociado al SOAT.');
+      setError('Seleccione un vehículo asociado al SOAT.');
       return;
     }
 
@@ -74,12 +76,12 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
 
     const numeroPoliza = normalizeDocumentCode(formData.numeroPoliza);
     if (!numeroPoliza) {
-      setError('El numero de poliza es obligatorio.');
+      setError('El número de póliza es obligatorio.');
       return;
     }
 
     if (!isValidDocumentCode(numeroPoliza)) {
-      setError('El numero de poliza debe ser alfanumerico y tener entre 6 y 30 caracteres.');
+      setError('El número de póliza debe ser alfanumérico y tener entre 6 y 30 caracteres.');
       return;
     }
 
@@ -90,12 +92,12 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
     }
 
     if (!isValidDateValue(formData.fechaExpedicion)) {
-      setError('Seleccione una fecha de expedicion valida.');
+      setError('Seleccione una fecha de expedición válida.');
       return;
     }
 
     if (!isValidDateValue(formData.fechaInicioVigencia) || !isValidDateValue(formData.fechaFinVigencia)) {
-      setError('Seleccione fechas de vigencia validas.');
+      setError('Seleccione fechas de vigencia válidas.');
       return;
     }
 
@@ -116,6 +118,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
         fechaFinVigencia: formData.fechaFinVigencia,
         observaciones: formData.observaciones.trim(),
       });
+      toast.success('SOAT actualizado correctamente.');
       onClose();
     } catch (err) {
       setError(err.response?.data?.error || 'Error al guardar los cambios. Intenta de nuevo.');
@@ -132,7 +135,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
             <FileText className="w-5 h-5" />
             Editar SOAT
           </h2>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button type="button" onClick={onClose} className="btn-icon">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -145,22 +148,22 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
           )}
 
           <div>
-            <span className="document-modal-label block text-sm font-bold mb-1">Vehiculo</span>
-            <div className="document-modal-readonly w-full px-4 py-2 border rounded-lg text-sm">
-              {vehiculo ? `${vehiculo.placa} · ${vehiculo.tipo || 'Otro'}` : 'Vehiculo no encontrado'}
+            <span className="document-modal-label block text-sm font-bold mb-1">Vehículo</span>
+            <div className="document-modal-readonly field-control">
+              {vehiculo ? `${vehiculo.placa} · ${vehiculo.tipo || 'Otro'}` : 'Vehículo no encontrado'}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="edit-soat-numero-poliza" className="block text-sm font-bold text-gray-700 mb-1">Numero de poliza</label>
+              <label htmlFor="edit-soat-numero-poliza" className="block text-sm font-bold text-gray-700 mb-1">Número de póliza</label>
               <input
                 id="edit-soat-numero-poliza"
                 type="text"
                 required
                 value={formData.numeroPoliza}
                 onChange={(e) => setFormData({ ...formData, numeroPoliza: e.target.value.toUpperCase() })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none uppercase"
+                className="field-control uppercase"
               />
             </div>
             <div>
@@ -171,7 +174,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
                 required
                 value={formData.aseguradora}
                 onChange={(e) => setFormData({ ...formData, aseguradora: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
               <datalist id="aseguradoras-soat-edit">
                 {ASEGURADORAS_DEMO.map((aseguradora) => (
@@ -183,14 +186,14 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="edit-soat-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha expedicion</label>
+              <label htmlFor="edit-soat-fecha-expedicion" className="block text-sm font-bold text-gray-700 mb-1">Fecha de expedición</label>
               <input
                 id="edit-soat-fecha-expedicion"
                 type="date"
                 required
                 value={formData.fechaExpedicion}
                 onChange={(e) => setFormData({ ...formData, fechaExpedicion: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
             <div>
@@ -201,7 +204,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
                 required
                 value={formData.fechaInicioVigencia}
                 onChange={(e) => setFormData({ ...formData, fechaInicioVigencia: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
             <div>
@@ -212,7 +215,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
                 required
                 value={formData.fechaFinVigencia}
                 onChange={(e) => setFormData({ ...formData, fechaFinVigencia: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
           </div>
@@ -223,18 +226,18 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
               id="edit-soat-observaciones"
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none min-h-20"
+              className="field-control min-h-20"
             />
           </div>
 
           <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg">
+            <button type="button" onClick={onClose} className="btn-ghost">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="bg-syntix-navy text-white px-6 py-2 rounded-lg font-medium hover:opacity-90 flex items-center gap-2 disabled:opacity-60"
+              className="btn-primary px-6"
             >
               <Save className="w-4 h-4" />
               {saving ? 'Guardando...' : 'Guardar cambios'}
