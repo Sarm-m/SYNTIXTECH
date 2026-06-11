@@ -408,6 +408,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
         data-scroll-lock-allow="true"
         className="ios-touch-scroll auth-modal-scroll max-h-full w-full max-w-md overflow-y-auto overflow-x-hidden overscroll-contain rounded-xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200"
         onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="register-modal-title"

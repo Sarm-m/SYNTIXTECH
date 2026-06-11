@@ -15,7 +15,7 @@ const normalizeWebOtpDomain = (value) =>
   String(value || '')
     .trim()
     .replace(/^https?:\/\//i, '')
-    .replace(/\/.*$/, '');
+    .split('/')[0];
 
 const getWebOtpDomain = () => {
   const configuredDomain = normalizeWebOtpDomain(process.env.WEBOTP_DOMAIN);
@@ -37,21 +37,16 @@ const maskPhone = (phoneNumber) => {
   return `${'*'.repeat(Math.max(digits.length - 4, 4))}${digits.slice(-4)}`;
 };
 
-const maskSid = (sid) => {
-  const value = String(sid || '');
-  if (value.length <= 6) return 'sid-redacted';
-  return `${value.slice(0, 2)}***${value.slice(-4)}`;
-};
-
 // Función base que hace el request a Twilio.
 async function enviarSms(phoneNumber, mensaje) {
+  const recipient = maskPhone(phoneNumber);
+
   if (SMS_MODE === 'mock') {
-    const sid = `SM_MOCK_${Date.now()}`;
-    console.log(`[SMS][mock] Envio simulado a ${maskPhone(phoneNumber)}. sid=${maskSid(sid)}`);
+    console.log('[SMS][mock] Envio simulado.');
     return {
-      sid,
       provider: 'mock',
       mock: true,
+      recipient,
       message: 'Codigo enviado en modo de prueba.',
     };
   }
@@ -86,9 +81,9 @@ async function enviarSms(phoneNumber, mensaje) {
   }
 
   return {
-    sid: response.data.sid,
     provider: 'twilio',
     mock: false,
+    recipient,
     message: 'Codigo enviado por SMS.',
   };
 }
@@ -98,7 +93,7 @@ async function enviarCodigoVerificacionSms(phoneNumber, nombre, codigo) {
   const expiracion = process.env.OTP_EXPIRACION_MINUTOS || 10;
   const mensaje = `Drive Control: Hola ${nombre || 'Usuario'}, tu codigo de verificacion es ${codigo}. Expira en ${expiracion} minutos.${buildWebOtpLine(codigo)}`;
   const result = await enviarSms(phoneNumber, mensaje);
-  console.log(`[SMS] OTP de verificacion enviado a ${maskPhone(phoneNumber)}. sid=${maskSid(result.sid)} provider=${result.provider}`);
+  console.log('[SMS] OTP de verificacion enviado.');
   return {
     ...result,
     message: result.mock ? 'Codigo de verificacion enviado en modo de prueba.' : result.message,
@@ -110,7 +105,7 @@ async function enviarCodigoRecuperacionSms(phoneNumber, nombre, codigo) {
   const expiracion = process.env.OTP_EXPIRACION_MINUTOS || 10;
   const mensaje = `Drive Control: Hola ${nombre || 'Usuario'}, tu codigo de recuperacion es ${codigo}. Expira en ${expiracion} minutos.${buildWebOtpLine(codigo)}`;
   const result = await enviarSms(phoneNumber, mensaje);
-  console.log(`[SMS] OTP de recuperacion enviado a ${maskPhone(phoneNumber)}. sid=${maskSid(result.sid)} provider=${result.provider}`);
+  console.log('[SMS] OTP de recuperacion enviado.');
   return {
     ...result,
     message: result.mock ? 'Codigo de recuperacion enviado en modo de prueba.' : result.message,

@@ -1,11 +1,8 @@
 import { spawnSync } from 'node:child_process';
 
-const isWindows = process.platform === 'win32';
-
 const run = (command, args) =>
   spawnSync(command, args, {
     encoding: 'utf8',
-    shell: isWindows,
   });
 
 const dockerVersion = run('docker', ['--version']);
@@ -30,7 +27,6 @@ console.log(`[docker-check] ${composeVersion.stdout.trim()}`);
 
 const composeConfig = spawnSync('docker', ['compose', 'config'], {
   stdio: 'inherit',
-  shell: isWindows,
 });
 
 if (composeConfig.status !== 0) {

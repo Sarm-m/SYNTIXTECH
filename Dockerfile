@@ -12,10 +12,12 @@ WORKDIR /app/backend
 ENV NODE_ENV=production
 ENV PORT=5000
 
-COPY --from=backend-deps /app/backend/node_modules ./node_modules
-COPY backend/ ./
+# El proceso de runtime solo necesita leer la aplicacion y sus dependencias.
+COPY --chmod=0555 --from=backend-deps /app/backend/node_modules ./node_modules
+COPY --chmod=0555 backend/ ./
 
 EXPOSE 5000
 
 # El backend arranca directamente con Node y toma variables del entorno del contenedor.
+USER node
 CMD ["node", "server.js"]

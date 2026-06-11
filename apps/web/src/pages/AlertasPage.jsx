@@ -304,7 +304,7 @@ function AlertGroup({ group, alerts, basePath, readOnly, onAlertAction, isDarkMo
           }`}>
             <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
             <p className={`mt-2 text-sm font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>Sin alertas en este grupo</p>
-            <p className={`mt-1 text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>No hay acciones pendientes por ahora.</p>
+            <p className="mt-1 text-xs text-slate-500">No hay acciones pendientes por ahora.</p>
           </div>
         ) : (
           alerts.map((alert) => (

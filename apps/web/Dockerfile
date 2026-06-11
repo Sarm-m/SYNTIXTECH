@@ -21,8 +21,12 @@ COPY --from=build /app/dist/apps/web /usr/share/nginx/html
 
 ENV BACKEND_URL=http://backend:5000
 
+RUN chown -R nginx:nginx /etc/nginx/conf.d /var/cache/nginx /var/run \
+    && sed -i -e '/^user[[:space:]]/d' -e 's#^pid[[:space:]].*;#pid /tmp/nginx.pid;#' /etc/nginx/nginx.conf
+
 EXPOSE 3000
 
 HEALTHCHECK --interval=20s --timeout=5s --retries=5 CMD wget --spider -q http://127.0.0.1:3000/ || exit 1
 
+USER nginx
 CMD ["/bin/sh", "-c", "envsubst '${BACKEND_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]

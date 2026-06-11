@@ -4,6 +4,8 @@ on:
     # Comenta automáticamente las nuevas tareas para recordar criterios de calidad del curso.
     types: [opened]
 
+permissions: {}
+
 jobs:
   inyectar-calidad:
     runs-on: ubuntu-latest
@@ -11,7 +13,7 @@ jobs:
       issues: write
     steps:
       - name: Agregar INVEST y Definition of Done
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |

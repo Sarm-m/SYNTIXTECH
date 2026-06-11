@@ -23,10 +23,10 @@ jobs:
 
     steps:
       - name: Obtener código fuente
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -44,6 +44,6 @@ jobs:
       - name: Resumen de verificación
         run: |
           # Se deja una traza corta para identificar rápidamente qué rama pasó por el workflow.
-          echo "Rama: ${{ github.ref_name }}"
-          echo "Autor: ${{ github.actor }}"
+          echo "Rama: $GITHUB_REF_NAME"
+          echo "Autor: $GITHUB_ACTOR"
           echo "Verificación exitosa"

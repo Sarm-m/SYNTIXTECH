@@ -175,6 +175,7 @@ test('no imprime credenciales Twilio en logs de envio exitoso', async () => {
   assert.doesNotMatch(joinedLogs, new RegExp(TEST_ENV.TWILIO_AUTH_TOKEN));
   assert.doesNotMatch(joinedLogs, /\+573001112233/);
   assert.doesNotMatch(joinedLogs, /123456/);
+  assert.doesNotMatch(joinedLogs, /SM_SAFE_LOG|twilio/i);
 });
 
 test('envia codigo de verificacion en modo mock sin credenciales Twilio', async () => {
@@ -201,7 +202,7 @@ test('envia codigo de verificacion en modo mock sin credenciales Twilio', async 
   assert.match(joinedLogs, /\[SMS\]\[mock\]/);
   assert.doesNotMatch(joinedLogs, /\+573001112233/);
   assert.doesNotMatch(joinedLogs, /123456/);
-  assert.doesNotMatch(joinedLogs, /AC_TEST_SID|test-auth-token/);
+  assert.doesNotMatch(joinedLogs, /AC_TEST_SID|test-auth-token|SHOULD_NOT_BE_USED/);
 });
 
 test('activa modo mock con SMS_MOCK_ENABLED=true', async () => {

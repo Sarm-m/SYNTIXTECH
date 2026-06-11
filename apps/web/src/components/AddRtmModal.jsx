@@ -3,28 +3,8 @@ import PropTypes from 'prop-types';
 import { X, FileText, Save } from 'lucide-react';
 import { useRtm } from '@/contexts/RtmContext.jsx';
 import { useVehicles } from '@/hooks/useVehicles.js';
-import {
-  isDateRangeValid,
-  isValidDateValue,
-  isValidDocumentCode,
-  isValidPlate,
-  normalizeDocumentCode,
-  normalizePlate,
-} from '@/utils/colombiaFormats.js';
+import { RTM_CENTERS, RTM_RESULTS, validateRtmDocument } from '@/utils/documentForm.js';
 import { useToast } from '@/contexts/ToastContext.jsx';
-
-const CDAS_DEMO = [
-  'CDA Bogota Norte',
-  'CDA Movilidad Capital',
-  'CDA Andino',
-  'CDA Autocontrol',
-  'CDA Revision Segura',
-  'CDA Centro Diagnostico Vial',
-  'CDA Ruta Segura',
-  'CDA Tecnica Motor',
-];
-
-const RESULTADOS = ['Aprobado', 'Rechazado', 'Pendiente'];
 
 const createInitialFormData = () => ({
   vehiculoId: '',
@@ -65,56 +45,19 @@ export default function AddRtmModal({ isOpen, onClose }) {
     e.preventDefault();
     setError('');
 
-    if (!formData.vehiculoId) {
-      setError('Seleccione un vehículo asociado a la RTM.');
-      return;
-    }
-
-    const placaVehiculo = normalizePlate(selectedVehicle?.placa || '');
-    if (!selectedVehicle || !isValidPlate(placaVehiculo)) {
-      setError('La placa asociada debe tener formato ABC123.');
-      return;
-    }
-
-    const numeroCertificado = normalizeDocumentCode(formData.numeroCertificado);
-    if (!numeroCertificado) {
-      setError('El numero de certificado es obligatorio.');
-      return;
-    }
-
-    if (!isValidDocumentCode(numeroCertificado)) {
-      setError('El numero de certificado debe ser alfanumerico y tener entre 6 y 30 caracteres.');
-      return;
-    }
-
-    const cda = formData.cda.trim();
-    if (!cda) {
-      setError('El CDA es obligatorio.');
-      return;
-    }
-
-    if (!isValidDateValue(formData.fechaExpedicion) || !isValidDateValue(formData.fechaVencimiento)) {
-      setError('Seleccione fechas válidas para la RTM.');
-      return;
-    }
-
-    if (!isDateRangeValid(formData.fechaExpedicion, formData.fechaVencimiento)) {
-      setError('La fecha de vencimiento no puede ser anterior a la fecha de expedición.');
+    const validation = validateRtmDocument({
+      formData,
+      vehicleId: formData.vehiculoId,
+      vehiclePlate: selectedVehicle?.placa,
+    });
+    if (validation.error) {
+      setError(validation.error);
       return;
     }
 
     try {
       setSaving(true);
-      await addRtm({
-        vehiculoId: formData.vehiculoId,
-        placaVehiculo,
-        numeroCertificado,
-        cda,
-        fechaExpedicion: formData.fechaExpedicion,
-        fechaVencimiento: formData.fechaVencimiento,
-        resultado: formData.resultado,
-        observaciones: formData.observaciones.trim(),
-      });
+      await addRtm(validation.data);
       toast.success('RTM registrada correctamente.');
       handleClose();
     } catch (err) {
@@ -187,7 +130,7 @@ export default function AddRtmModal({ isOpen, onClose }) {
                 placeholder="CDA Bogota Norte"
               />
               <datalist id="cdas-rtm">
-                {CDAS_DEMO.map((cda) => (
+                {RTM_CENTERS.map((cda) => (
                   <option key={cda} value={cda} />
                 ))}
               </datalist>
@@ -225,7 +168,7 @@ export default function AddRtmModal({ isOpen, onClose }) {
                 onChange={(e) => setFormData({ ...formData, resultado: e.target.value })}
                 className="field-control"
               >
-                {RESULTADOS.map((resultado) => (
+                {RTM_RESULTS.map((resultado) => (
                   <option key={resultado} value={resultado}>{resultado}</option>
                 ))}
               </select>

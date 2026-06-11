@@ -3,26 +3,9 @@ import PropTypes from 'prop-types';
 import { X, FileText, Save } from 'lucide-react';
 import { useDocuments } from '@/hooks/useDocuments.js';
 import { useVehicles } from '@/hooks/useVehicles.js';
-import {
-  isDateRangeValid,
-  isValidDateValue,
-  isValidDocumentCode,
-  isValidPlate,
-  normalizeDocumentCode,
-  normalizePlate,
-} from '@/utils/colombiaFormats.js';
+import { normalizePlate } from '@/utils/colombiaFormats.js';
+import { SOAT_INSURERS, validateSoatDocument } from '@/utils/documentForm.js';
 import { useToast } from '@/contexts/ToastContext.jsx';
-
-const ASEGURADORAS_DEMO = [
-  'Seguros Mundial',
-  'Seguros Bolivar',
-  'SURA',
-  'Previsora Seguros',
-  'Aseguradora Solidaria',
-  'Mapfre',
-  'Allianz',
-  'Liberty Seguros',
-];
 
 const createInitialFormData = () => ({
   numeroPoliza: '',
@@ -64,60 +47,19 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
     e.preventDefault();
     setError('');
 
-    if (!soat.vehiculoId) {
-      setError('Seleccione un vehículo asociado al SOAT.');
-      return;
-    }
-
-    if (!isValidPlate(placaVehiculo)) {
-      setError('La placa asociada debe tener formato ABC123.');
-      return;
-    }
-
-    const numeroPoliza = normalizeDocumentCode(formData.numeroPoliza);
-    if (!numeroPoliza) {
-      setError('El número de póliza es obligatorio.');
-      return;
-    }
-
-    if (!isValidDocumentCode(numeroPoliza)) {
-      setError('El número de póliza debe ser alfanumérico y tener entre 6 y 30 caracteres.');
-      return;
-    }
-
-    const aseguradora = formData.aseguradora.trim();
-    if (!aseguradora) {
-      setError('Seleccione una aseguradora.');
-      return;
-    }
-
-    if (!isValidDateValue(formData.fechaExpedicion)) {
-      setError('Seleccione una fecha de expedición válida.');
-      return;
-    }
-
-    if (!isValidDateValue(formData.fechaInicioVigencia) || !isValidDateValue(formData.fechaFinVigencia)) {
-      setError('Seleccione fechas de vigencia válidas.');
-      return;
-    }
-
-    if (!isDateRangeValid(formData.fechaInicioVigencia, formData.fechaFinVigencia)) {
-      setError('La fecha fin de vigencia no puede ser anterior a la fecha de inicio.');
+    const validation = validateSoatDocument({
+      formData,
+      vehicleId: soat.vehiculoId,
+      vehiclePlate: placaVehiculo,
+    });
+    if (validation.error) {
+      setError(validation.error);
       return;
     }
 
     try {
       setSaving(true);
-      await editSoat(soat.id, {
-        vehiculoId: soat.vehiculoId,
-        placaVehiculo,
-        numeroPoliza,
-        aseguradora,
-        fechaExpedicion: formData.fechaExpedicion,
-        fechaInicioVigencia: formData.fechaInicioVigencia,
-        fechaFinVigencia: formData.fechaFinVigencia,
-        observaciones: formData.observaciones.trim(),
-      });
+      await editSoat(soat.id, validation.data);
       toast.success('SOAT actualizado correctamente.');
       onClose();
     } catch (err) {
@@ -177,7 +119,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
                 className="field-control"
               />
               <datalist id="aseguradoras-soat-edit">
-                {ASEGURADORAS_DEMO.map((aseguradora) => (
+                {SOAT_INSURERS.map((aseguradora) => (
                   <option key={aseguradora} value={aseguradora} />
                 ))}
               </datalist>
