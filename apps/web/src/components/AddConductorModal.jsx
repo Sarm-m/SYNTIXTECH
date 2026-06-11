@@ -185,7 +185,7 @@ export default function AddConductorModal({
           <button
             type="button"
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="btn-icon"
           >
             <X className="w-6 h-6" />
           </button>
@@ -206,7 +206,7 @@ export default function AddConductorModal({
               required
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+              className="field-control"
               placeholder="Juan Perez"
             />
           </div>
@@ -222,7 +222,7 @@ export default function AddConductorModal({
                 maxLength={10}
                 value={formData.documento}
                 onChange={(e) => setFormData({ ...formData, documento: sanitizeDocument(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+                className="field-control"
                 placeholder="1234567890"
               />
             </div>
@@ -237,7 +237,7 @@ export default function AddConductorModal({
                 maxLength={10}
                 value={formData.telefono}
                 onChange={(e) => setFormData({ ...formData, telefono: sanitizePhone(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+                className="field-control"
                 placeholder="3001234567"
               />
             </div>
@@ -249,7 +249,7 @@ export default function AddConductorModal({
               id="conductor-vehiculo"
               value={formData.vehiculoId}
               onChange={(e) => setFormData({ ...formData, vehiculoId: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900 bg-white"
+              className="field-control"
             >
               <option value="">Sin asignar</option>
               {vehiculosDisponibles.map((vehiculo) => (
@@ -269,7 +269,7 @@ export default function AddConductorModal({
                   id="conductor-categoria"
                   value={formData.categoria}
                   onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900 bg-white"
+                  className="field-control"
                 >
                   <option value="A1">A1</option>
                   <option value="A2">A2</option>
@@ -292,7 +292,7 @@ export default function AddConductorModal({
                   onChange={(e) =>
                     setFormData({ ...formData, fechaVencimiento: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+                  className="field-control"
                 />
               </div>
             </div>
@@ -302,14 +302,14 @@ export default function AddConductorModal({
             <button
               type="button"
               onClick={handleClose}
-              className="min-h-10 rounded-lg px-4 py-2 font-medium text-gray-600 transition-colors hover:bg-gray-100"
+              className="btn-ghost"
             >
               Cancelar
             </button>
 
             <button
               type="submit"
-              className="flex min-h-10 items-center justify-center gap-2 rounded-lg bg-syntix-navy px-6 py-2 font-medium text-white transition-colors hover:bg-syntix-navy/90"
+              className="btn-primary px-6"
             >
               <Save className="w-4 h-4" /> {submitLabel}
             </button>

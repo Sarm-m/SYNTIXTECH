@@ -135,7 +135,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
             <FileText className="w-5 h-5" />
             Editar SOAT
           </h2>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button type="button" onClick={onClose} className="btn-icon">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -149,7 +149,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
 
           <div>
             <span className="document-modal-label block text-sm font-bold mb-1">Vehículo</span>
-            <div className="document-modal-readonly w-full px-4 py-2 border rounded-lg text-sm">
+            <div className="document-modal-readonly field-control">
               {vehiculo ? `${vehiculo.placa} · ${vehiculo.tipo || 'Otro'}` : 'Vehículo no encontrado'}
             </div>
           </div>
@@ -163,7 +163,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
                 required
                 value={formData.numeroPoliza}
                 onChange={(e) => setFormData({ ...formData, numeroPoliza: e.target.value.toUpperCase() })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none uppercase"
+                className="field-control uppercase"
               />
             </div>
             <div>
@@ -174,7 +174,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
                 required
                 value={formData.aseguradora}
                 onChange={(e) => setFormData({ ...formData, aseguradora: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
               <datalist id="aseguradoras-soat-edit">
                 {ASEGURADORAS_DEMO.map((aseguradora) => (
@@ -193,7 +193,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
                 required
                 value={formData.fechaExpedicion}
                 onChange={(e) => setFormData({ ...formData, fechaExpedicion: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
             <div>
@@ -204,7 +204,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
                 required
                 value={formData.fechaInicioVigencia}
                 onChange={(e) => setFormData({ ...formData, fechaInicioVigencia: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
             <div>
@@ -215,7 +215,7 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
                 required
                 value={formData.fechaFinVigencia}
                 onChange={(e) => setFormData({ ...formData, fechaFinVigencia: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
           </div>
@@ -226,18 +226,18 @@ export default function EditSoatModal({ isOpen, onClose, soat }) {
               id="edit-soat-observaciones"
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none min-h-20"
+              className="field-control min-h-20"
             />
           </div>
 
           <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg">
+            <button type="button" onClick={onClose} className="btn-ghost">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="bg-syntix-navy text-white px-6 py-2 rounded-lg font-medium hover:opacity-90 flex items-center gap-2 disabled:opacity-60"
+              className="btn-primary px-6"
             >
               <Save className="w-4 h-4" />
               {saving ? 'Guardando...' : 'Guardar cambios'}

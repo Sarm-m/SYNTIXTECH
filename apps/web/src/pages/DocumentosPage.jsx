@@ -147,7 +147,7 @@ export default function DocumentosPage() {
             type="button"
             onClick={() => openModal('addDocument')}
             data-onboarding="documents-add-soat"
-            className="bg-syntix-navy text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-syntix-navy/90"
+            className="btn-primary"
           >
             + Registrar SOAT
           </button>
@@ -155,11 +155,7 @@ export default function DocumentosPage() {
             type="button"
             onClick={() => openModal('addRtm')}
             data-onboarding="documents-add-rtm"
-            className={`rounded-lg border px-4 py-2 text-sm font-semibold ${
-              isDarkMode
-                ? 'border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800'
-                : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50'
-            }`}
+            className="btn-secondary"
           >
             + Registrar RTM
           </button>
@@ -248,7 +244,6 @@ export default function DocumentosPage() {
                       <RowActions
                         onEdit={() => setSoatEditando(soat)}
                         onDelete={() => setConfirmDelete({ tipo: 'soat', id: soat.id, nombre: soat.numeroPoliza })}
-                        isDarkMode={isDarkMode}
                       />
                     </td>
                   </tr>
@@ -340,7 +335,6 @@ export default function DocumentosPage() {
                       <RowActions
                         onEdit={() => setRtmEditando(rtm)}
                         onDelete={() => setConfirmDelete({ tipo: 'rtm', id: rtm.id, nombre: rtm.numeroCertificado })}
-                        isDarkMode={isDarkMode}
                       />
                     </td>
                   </tr>
@@ -403,7 +397,7 @@ function DocumentTableShell({
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={placeholder}
-            className={`w-full rounded-lg border py-2 pl-9 pr-4 text-sm outline-none focus:border-syntix-green focus:ring-2 focus:ring-syntix-green ${
+            className={`w-full rounded-lg border py-2 pl-9 pr-4 text-sm outline-none focus:border-syntix-blue focus:ring-2 focus:ring-syntix-blue ${
               isDarkMode
                 ? 'border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500'
                 : 'border-gray-300 bg-white text-gray-900'
@@ -426,17 +420,13 @@ function EmptyRows({ colSpan, hasData, isDarkMode }) {
   );
 }
 
-function RowActions({ onEdit, onDelete, isDarkMode }) {
+function RowActions({ onEdit, onDelete }) {
   return (
     <div className="flex gap-2">
       <button
         type="button"
         onClick={onEdit}
-        className={`rounded-lg p-2 transition-colors ${
-          isDarkMode
-            ? 'text-slate-500 hover:bg-slate-800 hover:text-slate-100'
-            : 'text-gray-400 hover:bg-gray-100 hover:text-syntix-navy'
-        }`}
+        className="btn-icon text-syntix-blue"
         title="Editar"
       >
         <Pencil className="w-4 h-4" />
@@ -444,11 +434,7 @@ function RowActions({ onEdit, onDelete, isDarkMode }) {
       <button
         type="button"
         onClick={onDelete}
-        className={`rounded-lg p-2 transition-colors ${
-          isDarkMode
-            ? 'text-slate-500 hover:bg-red-500/10 hover:text-red-300'
-            : 'text-gray-400 hover:bg-red-50 hover:text-red-500'
-        }`}
+        className="btn-icon text-syntix-red hover:bg-red-50 hover:text-red-700 dark:text-red-300 dark:hover:bg-red-500/10"
         title="Eliminar"
       >
         <Trash2 className="w-4 h-4" />
@@ -461,7 +447,7 @@ function DocumentMobileCard({ type, plate, code, entity, expiration, status, onE
   return (
     <article className={`rounded-xl border p-4 shadow-sm ${isDarkMode ? 'border-slate-800 bg-slate-950/50' : 'border-slate-100 bg-white'}`}>
       <div className="flex items-start justify-between gap-3">
-        <div><p className="text-xs font-bold uppercase tracking-wider text-syntix-green">{type}</p><p className={`mt-1 text-lg font-black ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{plate}</p></div>
+        <div><p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300">{type}</p><p className={`mt-1 text-lg font-black ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{plate}</p></div>
         <StatusBadge status={status} />
       </div>
       <dl className={`mt-4 grid grid-cols-1 gap-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -470,8 +456,8 @@ function DocumentMobileCard({ type, plate, code, entity, expiration, status, onE
         <div><dt className="text-xs font-bold uppercase text-slate-400">Vencimiento</dt><dd className="mt-1">{formatColombianDate(expiration)}</dd></div>
       </dl>
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <button type="button" onClick={onEdit} className="min-h-10 rounded-lg bg-syntix-navy/5 text-sm font-bold text-syntix-navy dark:bg-slate-800 dark:text-slate-100">Editar</button>
-        <button type="button" onClick={onDelete} className="min-h-10 rounded-lg bg-red-50 text-sm font-bold text-red-600 dark:bg-red-950/40 dark:text-red-300">Eliminar</button>
+        <button type="button" onClick={onEdit} className="btn-secondary min-h-10">Editar</button>
+        <button type="button" onClick={onDelete} className="btn-danger min-h-10">Eliminar</button>
       </div>
     </article>
   );
@@ -499,7 +485,6 @@ EmptyRows.propTypes = {
 RowActions.propTypes = {
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
-  isDarkMode: PropTypes.bool.isRequired,
 };
 
 DocumentMobileCard.propTypes = {

@@ -147,7 +147,7 @@ function DemoDocuments() {
           return (
             <SurfaceCard key={`${document.kind}-${document.id}`} className="p-5">
               <div className="flex items-start justify-between gap-3">
-                <div><p className="text-xs font-bold uppercase tracking-wider text-syntix-green">{document.kind}</p><p className="mt-1 font-black dark:text-slate-100">{vehicleById.get(String(document.vehiculoId))?.placa}</p></div>
+                <div><p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-300">{document.kind}</p><p className="mt-1 font-black dark:text-slate-100">{vehicleById.get(String(document.vehiculoId))?.placa}</p></div>
                 <StatusBadge status={document.estado} />
               </div>
               <div className="mt-5 grid grid-cols-2 gap-4 text-sm text-slate-600 dark:text-slate-300">
@@ -202,7 +202,7 @@ function DemoReports() {
     <DemoModuleShell
       title="Reportes y analítica"
       description="Indicadores ejecutivos para entender cumplimiento, riesgo y calidad de la información."
-      actions={<button type="button" onClick={handleDownload} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-syntix-navy px-4 py-2 text-sm font-bold text-white"><Download className="h-4 w-4" /> Descargar CSV</button>}
+      actions={<button type="button" onClick={handleDownload} className="btn-primary"><Download className="h-4 w-4" /> Descargar CSV</button>}
     >
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <MetricCard icon={Car} label="Vehículos" value={vehiculos.length} />
@@ -242,8 +242,8 @@ function DemoRunt() {
     <DemoModuleShell title="Validación RUNT simulada" description="Consulta una placa ficticia para comprobar SOAT y RTM antes de vincularla a la flota.">
       <SurfaceCard className="p-5">
         <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" /><input value={plate} onChange={(event) => setPlate(event.target.value.toUpperCase())} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white pl-11 pr-4 font-bold uppercase outline-none focus:border-syntix-green dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="ABC-123" /></div>
-          <button type="submit" className="min-h-12 rounded-xl bg-syntix-navy px-6 text-sm font-bold text-white">Consultar placa</button>
+          <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" /><input value={plate} onChange={(event) => setPlate(event.target.value.toUpperCase())} className="field-control min-h-12 pl-11 pr-4 font-bold uppercase" placeholder="ABC-123" /></div>
+          <button type="submit" className="btn-primary min-h-12 px-6">Consultar placa</button>
         </form>
         <p className="mt-3 text-xs text-slate-500">Prueba también con XYZ-987 o DEF-456.</p>
       </SurfaceCard>
@@ -264,8 +264,8 @@ function DemoModuleShell({ title, description, actions, children }) {
 function Filters({ query, setQuery, status, setStatus, placeholder = 'Buscar...' }) {
   return (
     <SurfaceCard className="flex flex-col gap-3 p-4 sm:flex-row">
-      {setQuery && <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-11 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-sm outline-none focus:border-syntix-green dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder={placeholder} /></div>}
-      {setStatus && <select value={status} onChange={(event) => setStatus(event.target.value)} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"><option value="todos">Todos los estados</option><option value="verde">Al día</option><option value="amarillo">Por vencer</option><option value="rojo">Crítico</option></select>}
+      {setQuery && <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} className="field-control pl-10 pr-4" placeholder={placeholder} /></div>}
+      {setStatus && <select value={status} onChange={(event) => setStatus(event.target.value)} className="field-control w-auto min-w-44 font-semibold"><option value="todos">Todos los estados</option><option value="verde">Al día</option><option value="amarillo">Por vencer</option><option value="rojo">Crítico</option></select>}
     </SurfaceCard>
   );
 }

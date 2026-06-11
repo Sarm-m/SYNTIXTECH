@@ -132,7 +132,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
             <Wrench className="w-5 h-5" />
             Editar RTM
           </h2>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button type="button" onClick={onClose} className="btn-icon">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -146,7 +146,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
 
           <div>
             <span className="document-modal-label block text-sm font-bold mb-1">Vehículo</span>
-            <div className="document-modal-readonly w-full px-4 py-2 border rounded-lg text-sm">
+            <div className="document-modal-readonly field-control">
               {vehiculo ? `${vehiculo.placa} · ${vehiculo.tipo || 'Otro'}` : 'Vehículo no encontrado'}
             </div>
           </div>
@@ -160,7 +160,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
                 required
                 value={formData.numeroCertificado}
                 onChange={(e) => setFormData({ ...formData, numeroCertificado: e.target.value.toUpperCase() })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none uppercase"
+                className="field-control uppercase"
               />
             </div>
             <div>
@@ -171,7 +171,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
                 required
                 value={formData.cda}
                 onChange={(e) => setFormData({ ...formData, cda: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
               <datalist id="cdas-rtm-edit">
                 {CDAS_DEMO.map((cda) => (
@@ -190,7 +190,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
                 required
                 value={formData.fechaExpedicion}
                 onChange={(e) => setFormData({ ...formData, fechaExpedicion: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
             <div>
@@ -201,7 +201,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
                 required
                 value={formData.fechaVencimiento}
                 onChange={(e) => setFormData({ ...formData, fechaVencimiento: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none"
+                className="field-control"
               />
             </div>
             <div>
@@ -210,7 +210,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
                 id="edit-rtm-resultado"
                 value={formData.resultado}
                 onChange={(e) => setFormData({ ...formData, resultado: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none bg-white"
+                className="field-control"
               >
                 {RESULTADOS.map((resultado) => (
                   <option key={resultado} value={resultado}>{resultado}</option>
@@ -225,18 +225,18 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
               id="edit-rtm-observaciones"
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none min-h-20"
+              className="field-control min-h-20"
             />
           </div>
 
           <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg">
+            <button type="button" onClick={onClose} className="btn-ghost">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="bg-syntix-navy text-white px-6 py-2 rounded-lg font-medium hover:opacity-90 flex items-center gap-2 disabled:opacity-60"
+              className="btn-primary px-6"
             >
               <Save className="w-4 h-4" />
               {saving ? 'Guardando...' : 'Guardar cambios'}

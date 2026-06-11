@@ -238,7 +238,7 @@ export default function ReportesPage() {
         <div data-onboarding="reports-compliance-card" className={`relative overflow-hidden rounded-2xl p-8 text-white shadow-lg ${
           isDarkMode ? 'bg-slate-900' : 'bg-syntix-navy'
         }`}>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-syntix-green rounded-full opacity-20 blur-3xl -mr-20 -mt-20" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full opacity-20 blur-3xl -mr-20 -mt-20" />
           <div className="relative z-10">
             <h3 className="text-lg font-medium text-gray-300 mb-2">Cumplimiento total</h3>
             <div className="flex items-end gap-2">

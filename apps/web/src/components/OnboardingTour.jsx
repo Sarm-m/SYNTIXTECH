@@ -162,7 +162,7 @@ export default function OnboardingTour() {
   if (showWelcome) {
     return (
       <TourShell>
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-syntix-green/10 text-syntix-green">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-syntix-blue/10 text-syntix-blue">
           <Sparkles className="h-6 w-6" />
         </div>
 
@@ -173,7 +173,7 @@ export default function OnboardingTour() {
           primer vehiculo. Si ya entendiste la plataforma, puedes omitir este paso y entrar de una vez.
         </p>
 
-        <div className="mt-6 rounded-2xl border border-syntix-green/20 bg-syntix-green/5 p-4 text-sm text-gray-700">
+        <div className="mt-6 rounded-2xl border border-syntix-blue/20 bg-syntix-blue/5 p-4 text-sm text-gray-700">
           El recorrido solo aparece automaticamente para cuentas nuevas. Luego podras volver a abrirlo
           manualmente desde el encabezado del dashboard cuando quieras repasarlo.
         </div>
@@ -203,14 +203,14 @@ export default function OnboardingTour() {
           <button
             type="button"
             onClick={skipWelcome}
-            className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+            className="btn-secondary"
           >
             Ya entendi, ir al inicio
           </button>
           <button
             type="button"
             onClick={startTour}
-            className="rounded-xl bg-syntix-navy px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-syntix-navy/90"
+            className="btn-primary"
           >
             Si, mostrar tutorial
           </button>
@@ -223,7 +223,7 @@ export default function OnboardingTour() {
     if (showCompletion) {
       return (
         <TourShell>
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-syntix-green/10 text-syntix-green">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-syntix-blue/10 text-syntix-blue">
             <CheckCircle2 className="h-6 w-6" />
           </div>
 
@@ -234,7 +234,7 @@ export default function OnboardingTour() {
             alertas, RUNT, reportes y configuracion.
           </p>
 
-          <div className="mt-6 rounded-2xl border border-syntix-green/20 bg-syntix-green/5 p-4 text-sm text-gray-700">
+          <div className="mt-6 rounded-2xl border border-syntix-blue/20 bg-syntix-blue/5 p-4 text-sm text-gray-700">
             Tu cuenta ya quedo preparada para empezar a operar el software con una vista clara de donde
             registrar informacion, donde revisar riesgos y donde hacer seguimiento.
           </div>
@@ -243,7 +243,7 @@ export default function OnboardingTour() {
             <button
               type="button"
               onClick={closeCompletion}
-              className="w-full rounded-xl bg-syntix-navy px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-syntix-navy/90 sm:w-auto"
+              className="btn-primary w-full sm:w-auto"
             >
               Ir al dashboard
             </button>
@@ -261,7 +261,7 @@ export default function OnboardingTour() {
 
       {targetRect && (
         <div
-          className="pointer-events-none absolute rounded-3xl border-2 border-syntix-green shadow-[0_0_0_9999px_rgba(15,23,42,0.35)] transition-all duration-300"
+          className="pointer-events-none absolute rounded-3xl border-2 border-syntix-blue shadow-[0_0_0_9999px_rgba(15,23,42,0.35)] transition-all duration-300"
           style={targetRect}
         />
       )}
@@ -270,7 +270,7 @@ export default function OnboardingTour() {
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-syntix-green/10 px-3 py-1 text-xs font-semibold text-syntix-green">
+              <div className="inline-flex items-center gap-2 rounded-full bg-syntix-blue/10 px-3 py-1 text-xs font-semibold text-syntix-blue">
                 <Sparkles className="h-4 w-4" />
                 Paso {currentStepIndex + 1} de {steps.length}
               </div>
@@ -280,7 +280,7 @@ export default function OnboardingTour() {
             <button
               type="button"
               onClick={skipTour}
-              className="shrink-0 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              className="btn-icon shrink-0"
               title="Saltar tutorial"
             >
               <X className="h-5 w-5" />
@@ -295,7 +295,7 @@ export default function OnboardingTour() {
               <ul className="mt-2 space-y-2 text-sm text-gray-700">
                 {currentStep.learnings.map((item) => (
                   <li key={item} className="flex gap-2">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-syntix-green" />
+                    <span className="mt-1 h-2 w-2 rounded-full bg-syntix-blue" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -307,7 +307,7 @@ export default function OnboardingTour() {
         <div className="safe-area-bottom shrink-0 border-t border-gray-100 bg-white p-4 sm:p-6 sm:pb-6">
           <div className="h-2 overflow-hidden rounded-full bg-gray-100">
             <div
-              className="h-full rounded-full bg-syntix-green transition-all duration-300"
+              className="h-full rounded-full bg-syntix-blue transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
@@ -318,7 +318,7 @@ export default function OnboardingTour() {
                 type="button"
                 onClick={goToPreviousStep}
                 disabled={currentStepIndex === 0}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:py-2"
+                className="btn-secondary"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Atras
@@ -327,7 +327,7 @@ export default function OnboardingTour() {
               <button
                 type="button"
                 onClick={skipTour}
-                className="rounded-xl border border-transparent px-4 py-3 text-sm font-semibold text-gray-500 transition-colors hover:bg-gray-50 sm:py-2"
+                className="btn-ghost"
               >
                 Ya entendi
               </button>
@@ -337,7 +337,7 @@ export default function OnboardingTour() {
               <button
                 type="button"
                 onClick={finishTour}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-syntix-green px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-syntix-green/90 sm:w-auto sm:py-2"
+                className="btn-primary w-full sm:w-auto"
               >
                 <CheckCircle2 className="h-4 w-4" />
                 Finalizar
@@ -346,7 +346,7 @@ export default function OnboardingTour() {
               <button
                 type="button"
                 onClick={goToNextStep}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-syntix-navy px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-syntix-navy/90 sm:w-auto sm:py-2"
+                className="btn-primary w-full sm:w-auto"
               >
                 Siguiente
                 <ArrowRight className="h-4 w-4" />

@@ -111,7 +111,7 @@ export default function ConductoresPage() {
           type="button"
           onClick={openCreateModal}
           data-onboarding="conductors-add-button"
-          className="bg-syntix-navy text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2 shadow-sm"
+          className="btn-primary"
         >
           <Plus className="w-4 h-4" /> Agregar conductor
         </button>
@@ -130,7 +130,7 @@ export default function ConductoresPage() {
               placeholder="Buscar por nombre o documento..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full rounded-lg border py-2 pl-9 pr-4 text-sm outline-none focus:border-syntix-green focus:ring-2 focus:ring-syntix-green ${
+              className={`w-full rounded-lg border py-2 pl-9 pr-4 text-sm outline-none focus:border-syntix-blue focus:ring-2 focus:ring-syntix-blue ${
                 isDarkMode
                   ? 'border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500'
                   : 'border-gray-300 bg-white text-gray-900'
@@ -191,22 +191,14 @@ export default function ConductoresPage() {
                   <button
                     type="button"
                     onClick={() => openEditModal(c)}
-                    className={`inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                      isDarkMode
-                        ? 'bg-syntix-green/10 text-syntix-green hover:bg-syntix-green/20'
-                        : 'bg-syntix-navy/5 text-syntix-navy hover:bg-syntix-navy/10'
-                    }`}
+                    className="btn-secondary min-h-10"
                   >
                     Editar
                   </button>
                   <button
                     type="button"
                     onClick={() => setConductorToDelete(c)}
-                    className={`inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                      isDarkMode
-                        ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
-                        : 'bg-red-50 text-syntix-red hover:bg-red-100'
-                    }`}
+                    className="btn-danger min-h-10"
                   >
                     Eliminar
                   </button>
@@ -286,11 +278,7 @@ export default function ConductoresPage() {
                       <button
                       type="button"
                       onClick={() => openEditModal(c)}
-                      className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        isDarkMode
-                          ? 'bg-syntix-green/10 text-syntix-green hover:bg-syntix-green/20'
-                          : 'bg-syntix-navy/5 text-syntix-navy hover:bg-syntix-navy/10'
-                      }`}
+                      className="btn-secondary min-h-9 px-3 py-1.5 text-xs"
                       aria-label={`Editar conductor ${c.nombre}`}
                     >
                         Editar
@@ -300,11 +288,7 @@ export default function ConductoresPage() {
                       <button
                       type="button"
                       onClick={() => setConductorToDelete(c)}
-                      className={`rounded-lg p-2 transition-colors ${
-                        isDarkMode
-                          ? 'text-slate-500 hover:bg-red-500/10 hover:text-red-300'
-                          : 'text-gray-400 hover:bg-red-50 hover:text-syntix-red'
-                      }`}
+                      className="btn-icon text-syntix-red hover:bg-red-50 hover:text-red-700 dark:text-red-300 dark:hover:bg-red-500/10"
                       aria-label={`Eliminar conductor ${c.nombre}`}
                     >
                         <Trash2 className="w-4 h-4" />

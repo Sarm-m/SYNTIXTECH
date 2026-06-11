@@ -28,11 +28,11 @@ export default function Header({ toggleSidebar }) {
 
   return (
     <header className={`h-16 sticky top-0 z-30 flex items-center justify-between px-4 text-white shadow-md lg:px-8 ${
-      isDarkMode ? 'bg-slate-900 border-b border-slate-800' : 'bg-syntix-navy'
+      isDarkMode ? 'border-b border-slate-800 bg-slate-900' : 'border-b border-blue-400/10 bg-[linear-gradient(110deg,#050B18,#08162E_60%,#11203A)] shadow-lg shadow-slate-950/15'
     }`}>
       <div className="flex items-center gap-4">
         {/* El botón móvil abre el sidebar sin duplicar navegación dentro del contenido. */}
-        <button onClick={toggleSidebar} className="lg:hidden p-2 text-gray-300 hover:bg-white/10 rounded-md">
+        <button onClick={toggleSidebar} className="btn-icon border-white/10 text-gray-300 hover:bg-white/10 hover:text-white lg:hidden">
           <Menu className="w-5 h-5" />
         </button>
         <div className="hidden lg:flex items-center gap-2 text-sm font-medium text-gray-300">
@@ -48,7 +48,7 @@ export default function Header({ toggleSidebar }) {
         <button
           type="button"
           onClick={startTour}
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-xs font-semibold transition-colors md:h-auto md:w-auto md:gap-2 md:px-3 md:py-2 ${
+          className={`btn-outline h-10 min-h-10 w-10 rounded-xl px-0 text-xs md:w-auto md:gap-2 md:px-3 ${
             isDarkMode
               ? 'border-slate-700 text-slate-200 hover:bg-slate-800'
               : 'border-white/15 text-gray-200 hover:bg-white/10'
@@ -62,7 +62,7 @@ export default function Header({ toggleSidebar }) {
         {/* El centro de alertas conserva acceso rápido desde cualquier módulo. */}
         <button
           onClick={handleAlertsClick}
-          className={`relative rounded-full p-2 ${
+          className={`btn-icon relative ${
             isDarkMode ? 'text-slate-300 hover:bg-slate-800' : 'text-gray-300 hover:bg-white/10'
           }`}
           title="Ver alertas"

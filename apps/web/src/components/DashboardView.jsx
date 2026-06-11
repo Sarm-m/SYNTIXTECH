@@ -25,8 +25,6 @@ import {
 import { formatColombianDate } from '@/utils/dateUtils.js';
 import { useTheme } from '@/contexts/ThemeContext.jsx';
 
-const actionButtonClass = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition';
-
 export default function DashboardView({
   vehiculos,
   conductores,
@@ -68,13 +66,13 @@ export default function DashboardView({
 
   const actions = (
     <>
-      <button type="button" onClick={onAddVehicle} className={`${actionButtonClass} bg-syntix-navy text-white hover:bg-slate-700`}>
+      <button type="button" onClick={onAddVehicle} className="btn-primary">
         <Plus className="h-4 w-4" /> Agregar vehículo
       </button>
-      <button type="button" onClick={onAddConductor} className={`${actionButtonClass} border border-slate-200 bg-white text-syntix-navy hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800`}>
+      <button type="button" onClick={onAddConductor} className="btn-secondary">
         <Users className="h-4 w-4" /> Agregar conductor
       </button>
-      <button type="button" onClick={onAddSoat} className={`${actionButtonClass} border border-slate-200 bg-white text-syntix-navy hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800`}>
+      <button type="button" onClick={onAddSoat} className="btn-secondary">
         <FilePlus2 className="h-4 w-4" /> Registrar documento
       </button>
     </>
@@ -185,7 +183,7 @@ function SectionHeading({ icon: Icon, title, description, link, isDarkMode }) {
           <p className={`mt-1 text-xs leading-5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{description}</p>
         </div>
       </div>
-      {link && <Link to={link} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-syntix-green hover:underline">Ver todo <ArrowRight className="h-3.5 w-3.5" /></Link>}
+      {link && <Link to={link} className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-300">Ver todo <ArrowRight className="h-3.5 w-3.5" /></Link>}
     </div>
   );
 }
@@ -214,7 +212,7 @@ function QuickLink({ to, icon: Icon, title, description, isDarkMode }) {
     }`}>
       <div className="flex items-center justify-between">
         <div className={`rounded-xl p-2 ${isDarkMode ? 'bg-slate-800 text-slate-200' : 'bg-white text-syntix-navy shadow-sm'}`}><Icon className="h-5 w-5" /></div>
-        <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:translate-x-1 group-hover:text-syntix-green" />
+        <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:translate-x-1 group-hover:text-blue-600 dark:group-hover:text-blue-300" />
       </div>
       <p className={`mt-4 text-sm font-black ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{title}</p>
       <p className={`mt-1 text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{description}</p>

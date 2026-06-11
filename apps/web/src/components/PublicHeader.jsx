@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { LayoutDashboard, LogOut, Menu, Settings, User, X } from 'lucide-react';
+import { LayoutDashboard, LogOut, Menu, PlayCircle, Settings, User, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import UserProfileDropdown from './UserProfileDropdown.jsx';
@@ -12,11 +12,11 @@ import {
 } from '@/utils/landingNavigation.js';
 
 const navLinkClass =
-  'nav-link text-gray-700 hover:text-syntix-green font-medium transition-colors';
+  'nav-link text-sm font-medium text-slate-300 transition-colors hover:text-white';
 const mobileNavLinkClass =
-  'nav-link flex min-h-11 items-center rounded-lg px-3 py-2 text-gray-700 font-medium transition-colors hover:bg-gray-50 hover:text-syntix-green';
+  'nav-link flex min-h-11 items-center rounded-xl px-3 py-2 text-slate-200 font-semibold transition-colors hover:bg-white/[0.06] hover:text-white';
 const mobileUserActionClass =
-  'flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-white hover:text-syntix-navy';
+  'flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white';
 
 export default function PublicHeader({ onLoginClick, onRegisterClick }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -130,7 +130,7 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
       }
     };
 
-    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    const mediaQuery = window.matchMedia('(min-width: 1280px)');
     const handleMediaChange = (event) => {
       if (event.matches) {
         closeMobileMenu();
@@ -184,46 +184,48 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 border-b border-gray-100 bg-white/90 backdrop-blur-md ${headerZIndexClass}`}>
-        <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className={`fixed left-0 right-0 top-0 border-b border-white/[0.08] bg-[#020817]/90 shadow-lg shadow-black/10 backdrop-blur-xl ${headerZIndexClass}`}>
+        <div className="relative z-30 mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex-shrink-0 flex items-center">
               <Link
                 to="/"
                 onClick={handleLogoClick}
-                className="font-extrabold text-2xl tracking-tight text-syntix-navy"
+                className="group flex items-center gap-3 text-xl font-extrabold tracking-tight text-slate-100 sm:text-2xl"
               >
-                SYNTIX <span className="text-syntix-green">TECH</span>
+                <span className="syntix-logo-mark" aria-hidden="true"><span /><span /></span>
+                <span>SYNTIX <span className="text-blue-400">TECH</span></span>
               </Link>
             </div>
 
-            <nav className="hidden md:flex space-x-8">
+            <nav className="hidden items-center space-x-6 xl:flex 2xl:space-x-9">
               {LANDING_NAV_ITEMS.map((item) => renderNavItem(item, navLinkClass))}
             </nav>
 
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden items-center gap-2 xl:flex">
               {isAuthenticated ? (
-                <UserProfileDropdown variant="light" />
+                <UserProfileDropdown variant="dark" />
               ) : (
                 <>
-                  <Link to="/demo/dashboard" className="text-syntix-navy font-medium hover:text-syntix-green transition-colors">
-                    Ver demo
+                  <Link to="/demo/dashboard" className="landing-header-action">
+                    <PlayCircle className="h-4 w-4" /> Ver demo
                   </Link>
-                  <button type="button" onClick={handleLoginClick} className="text-syntix-navy font-medium hover:text-syntix-green transition-colors">
+                  <button type="button" onClick={handleLoginClick} className="landing-header-action">
+                    <User className="h-4 w-4" />
                     Iniciar sesión
                   </button>
-                  <button type="button" onClick={handleRegisterClick} className="bg-syntix-navy text-white px-5 py-2.5 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors shadow-md shadow-syntix-navy/20">
+                  <button type="button" onClick={handleRegisterClick} className="landing-register-action">
                     Registrarse
                   </button>
                 </>
               )}
             </div>
 
-            <div className="md:hidden flex items-center">
+            <div className="flex items-center xl:hidden">
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-200 transition hover:border-blue-300/25 hover:bg-white/[0.08] hover:text-white"
                 aria-label={isMobileMenuOpen ? 'Cerrar menu principal' : 'Abrir menu principal'}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="public-mobile-menu"
@@ -237,7 +239,7 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
 
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-[70] bg-syntix-navy/35 backdrop-blur-[1px] md:hidden"
+          className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] xl:hidden"
           onClick={closeMobileMenu}
           aria-hidden="true"
         />
@@ -247,7 +249,7 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
         <div
           id="public-mobile-menu"
           data-scroll-lock-allow="true"
-          className="ios-touch-scroll fixed inset-x-0 bottom-0 top-20 z-[75] overflow-y-auto overflow-x-hidden overscroll-contain bg-white px-4 pb-6 pt-3 shadow-2xl md:hidden"
+          className="ios-touch-scroll fixed inset-x-0 bottom-0 top-20 z-[75] overflow-y-auto overflow-x-hidden overscroll-contain border-t border-white/[0.06] bg-[#050d1a] px-4 pb-6 pt-3 shadow-2xl xl:hidden"
           role="dialog"
           aria-modal="true"
           aria-label="Menu principal"
@@ -256,16 +258,16 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
             {LANDING_NAV_ITEMS.map((item) => renderNavItem(item, mobileNavLinkClass))}
           </nav>
 
-          <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4">
+          <div className="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4">
             {isAuthenticated ? (
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 shadow-sm">
-                <div className="flex min-w-0 items-center gap-3 border-b border-gray-200 pb-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-syntix-green text-lg font-bold text-white shadow-sm">
+              <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3 shadow-sm">
+                <div className="flex min-w-0 items-center gap-3 border-b border-white/10 pb-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-syntix-blue text-lg font-bold text-white shadow-sm">
                     {initial}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-syntix-navy">{user?.empresa}</p>
-                    <p className="truncate text-xs text-gray-500">{user?.email}</p>
+                    <p className="truncate text-sm font-bold text-white">{user?.empresa}</p>
+                    <p className="truncate text-xs text-slate-400">{user?.email}</p>
                   </div>
                 </div>
 
@@ -297,7 +299,7 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
                   <button
                     type="button"
                     onClick={handleMobileLogout}
-                    className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold text-syntix-red transition-colors hover:bg-red-50"
+                    className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-400 transition-colors hover:bg-red-400/10"
                   >
                     <LogOut className="h-4 w-4 shrink-0" />
                     Cerrar sesión
@@ -306,13 +308,13 @@ export default function PublicHeader({ onLoginClick, onRegisterClick }) {
               </div>
             ) : (
               <>
-                <button type="button" onClick={() => handleMobileRouteClick('/demo/dashboard')} className="min-h-11 w-full rounded-lg border border-syntix-green py-2 font-medium text-syntix-green">
+                <button type="button" onClick={() => handleMobileRouteClick('/demo/dashboard')} className="landing-secondary-cta w-full">
                   Ver demo
                 </button>
-                <button type="button" onClick={handleLoginClick} className="min-h-11 w-full rounded-lg border border-syntix-navy py-2 font-medium text-syntix-navy">
+                <button type="button" onClick={handleLoginClick} className="landing-secondary-cta w-full">
                   Iniciar sesión
                 </button>
-                <button type="button" onClick={handleRegisterClick} className="min-h-11 w-full rounded-lg bg-syntix-navy py-2 font-medium text-white">
+                <button type="button" onClick={handleRegisterClick} className="landing-primary-cta w-full">
                   Registrarse
                 </button>
               </>

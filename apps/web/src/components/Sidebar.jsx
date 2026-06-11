@@ -45,13 +45,13 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           data-onboarding="sidebar"
         className={`fixed inset-y-0 left-0 z-50 flex h-full min-h-screen w-64 transform flex-col border-r transition-transform duration-200 ease-in-out lg:static lg:min-h-0 lg:h-full ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        } ${isDarkMode ? 'border-slate-800 bg-slate-900 text-slate-100' : 'border-gray-200 bg-white'}`}
+        } ${isDarkMode ? 'border-slate-800 bg-slate-900 text-slate-100' : 'border-slate-200 bg-white'}`}
       >
         <div className={`flex h-16 items-center justify-between border-b px-6 text-white ${
-            isDarkMode ? 'border-slate-800 bg-slate-950' : 'border-gray-100 bg-syntix-navy'
+            isDarkMode ? 'border-slate-800 bg-[#020617]' : 'border-blue-400/10 bg-[linear-gradient(120deg,#050B18,#08162E_60%,#11203A)]'
           }`}>
           <Link to="/" className="font-bold text-xl tracking-wider hover:opacity-80 transition-opacity cursor-pointer">
-            SYNTIX <span className="text-syntix-green">TECH</span>
+            SYNTIX <span className="text-blue-400">TECH</span>
           </Link>
           <button
             onClick={toggleSidebar}
@@ -61,7 +61,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           </button>
         </div>
 
-        <nav className={`min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-6 ${isDarkMode ? 'bg-slate-900' : 'bg-gray-50'}`}>
+        <nav className={`min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-6 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50/80'}`}>
           {navItems.map((item) => (
             <NavLink
               key={item.path}
@@ -69,7 +69,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
               className={({ isActive }) =>
                 `flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-syntix-green/15 text-syntix-green font-semibold'
+                    ? 'bg-blue-50 text-blue-700 font-bold shadow-sm ring-1 ring-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20'
                     : isDarkMode
                       ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-syntix-navy'

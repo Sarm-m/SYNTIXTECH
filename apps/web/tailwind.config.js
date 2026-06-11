@@ -20,9 +20,12 @@ module.exports = {
 			// Aquí conviven los colores de marca y los tokens genéricos usados por los componentes UI.
 			colors: {
 				syntix: {
-					navy: '#1B263B',
-					green: '#2D6A4F',
-					red: '#E63946',
+					navy: '#08162E',
+					blue: '#2563EB',
+					accent: '#3B82F6',
+					ice: '#7DD3FC',
+					green: '#16805A',
+					red: '#C2414C',
 				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -62,6 +65,13 @@ module.exports = {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)',
+			},
+			boxShadow: {
+				premium: '0 18px 45px -24px rgba(15, 23, 42, 0.28)',
+				'premium-dark': '0 22px 55px -28px rgba(2, 6, 23, 0.72)',
+			},
+			fontFamily: {
+				sans: ['DM Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
 			},
 		},
 	},

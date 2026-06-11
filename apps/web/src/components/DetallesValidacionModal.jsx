@@ -49,9 +49,9 @@ export default function DetallesValidacionModal({
             <h2 className="text-2xl font-bold text-syntix-navy">Detalles de Validación</h2>
             <p className="text-sm text-gray-600 mt-1">{validation.placa}</p>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="btn-icon"
           >
             <X className="w-6 h-6" />
           </button>
@@ -200,11 +200,11 @@ export default function DetallesValidacionModal({
               {expandedHistorial && (
                 <div className="mt-3 space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
                   {historialPlaca.map((val, idx) => (
-                    <div 
+                    <div
                       key={val.id}
                       className={`p-3 rounded-lg text-sm ${
-                        val.id === validation.id 
-                          ? 'bg-syntix-navy/10 border-l-4 border-syntix-navy' 
+                        val.id === validation.id
+                          ? 'bg-syntix-navy/10 border-l-4 border-syntix-navy'
                           : 'bg-white border border-gray-200'
                       }`}
                     >
@@ -225,7 +225,7 @@ export default function DetallesValidacionModal({
         <div className="sticky bottom-0 border-t border-gray-200 bg-gray-50 p-6 flex gap-3">
           <button
             onClick={() => onDownloadPDF?.(validation.id)}
-            className="flex-1 bg-syntix-green text-white py-2 rounded-lg font-bold hover:bg-syntix-green/90 transition-colors flex items-center justify-center gap-2"
+            className="btn-primary flex-1"
           >
             <Download className="w-4 h-4" />
             Descargar PDF
@@ -235,14 +235,14 @@ export default function DetallesValidacionModal({
               onDeleteValidation?.(validation.id);
               onClose();
             }}
-            className="flex-1 bg-syntix-red text-white py-2 rounded-lg font-bold hover:bg-syntix-red/90 transition-colors flex items-center justify-center gap-2"
+            className="btn-danger flex-1"
           >
             <Trash2 className="w-4 h-4" />
             Eliminar
           </button>
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-300 text-gray-900 py-2 rounded-lg font-bold hover:bg-gray-400 transition-colors"
+            className="btn-secondary flex-1"
           >
             Cerrar
           </button>

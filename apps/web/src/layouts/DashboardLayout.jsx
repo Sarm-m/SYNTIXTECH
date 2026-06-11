@@ -14,7 +14,7 @@ export default function DashboardLayout() {
   const { isDarkMode } = useTheme();
 
   return (
-    <div className={`dvh-screen flex w-full overflow-hidden overflow-x-hidden font-sans ${isDarkMode ? 'bg-slate-950' : 'bg-gray-100'}`}>
+    <div className={`dvh-screen flex w-full overflow-hidden overflow-x-hidden font-sans ${isDarkMode ? 'bg-[#020617]' : 'bg-slate-50'}`}>
       {/* Cuando el onboarding bloquea interacción, se congela tanto el sidebar
           como el contenido para que el usuario siga el flujo guiado sin desviarse. */}
       <div
@@ -34,7 +34,7 @@ export default function DashboardLayout() {
         <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
         {/* Outlet renderiza cada módulo protegido dentro del mismo marco visual. */}
-        <main className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 lg:p-8 ${isDarkMode ? 'bg-slate-950 text-slate-100' : ''}`}>
+        <main className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 lg:p-8 ${isDarkMode ? 'bg-[#020617] text-slate-100' : 'bg-slate-50'}`}>
           <div className="mx-auto max-w-7xl">
             <Outlet />
           </div>

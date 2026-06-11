@@ -1,16 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
-import { Search, Download, Eye, Trash2, Calendar } from 'lucide-react';
+import { AlertTriangle, Search, Download, Eye, Trash2, Calendar } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge.jsx';
 import DetallesValidacionModal from '@/components/DetallesValidacionModal.jsx';
 import { useValidationHistory } from '@/hooks/useValidationHistory.js';
-import { ConfirmDialog, EmptyState } from '@/components/UI/SaasUI.jsx';
+import { ConfirmDialog, EmptyState, MetricCard, PageHeader, SurfaceCard } from '@/components/UI/SaasUI.jsx';
 import { useToast } from '@/contexts/ToastContext.jsx';
+import { useTheme } from '@/contexts/ThemeContext.jsx';
 
 // HistorialValidacionesPage funciona como bitácora de auditoría para consultas RUNT ya realizadas.
 export default function HistorialValidacionesPage() {
   const { validations, deleteValidation, getValidationHistory, exportToCSV, getStatistics } = useValidationHistory();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterState, setFilterState] = useState('todos');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
@@ -20,6 +21,7 @@ export default function HistorialValidacionesPage() {
   const [validationToDelete, setValidationToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const toast = useToast();
+  const { isDarkMode } = useTheme();
 
   const itemsPerPage = 20;
 
@@ -29,7 +31,7 @@ export default function HistorialValidacionesPage() {
 
     // Filtro por búsqueda (placa)
     if (searchTerm) {
-      filtered = filtered.filter(v => 
+      filtered = filtered.filter(v =>
         v.placa.includes(searchTerm.toUpperCase())
       );
     }
@@ -39,7 +41,7 @@ export default function HistorialValidacionesPage() {
       filtered = filtered.filter(v => {
         const soatVigente = v.resultadoRUNT?.data?.soat?.vigente;
         const rtmVigente = v.resultadoRUNT?.data?.rtm?.vigente;
-        
+
         if (filterState === 'vigentes') return soatVigente && rtmVigente;
         if (filterState === 'alertas') return !soatVigente || !rtmVigente;
         if (filterState === 'vencidos') return !soatVigente || !rtmVigente;
@@ -50,7 +52,7 @@ export default function HistorialValidacionesPage() {
     if (dateRange.start && dateRange.end) {
       const start = new Date(dateRange.start).getTime();
       const end = new Date(dateRange.end).getTime();
-      
+
       filtered = filtered.filter(v => {
         const timestamp = new Date(v.timestamp).getTime();
         return timestamp >= start && timestamp <= end;
@@ -110,69 +112,58 @@ export default function HistorialValidacionesPage() {
         <title>Historial de Validaciones | SYNTIX Drive Control</title>
       </Helmet>
 
-      {/* Header */}
-      <div data-onboarding="runt-history-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-syntix-navy">Historial de Validaciones RUNT</h1>
-        <button 
-          data-onboarding="runt-history-export"
-          onClick={handleDownloadCSV}
-          disabled={filteredValidations.length === 0}
-          className="bg-syntix-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-syntix-green/90 transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download className="w-4 h-4" /> Exportar CSV
-        </button>
+      <div data-onboarding="runt-history-header">
+        <PageHeader
+          eyebrow="Auditoría RUNT"
+          title="Historial de Validaciones RUNT"
+          description="Consulta evidencias, filtra resultados y exporta el historial operativo de validaciones."
+          actions={(
+            <button
+              data-onboarding="runt-history-export"
+              onClick={handleDownloadCSV}
+              disabled={filteredValidations.length === 0}
+              className="btn-primary"
+            >
+              <Download className="w-4 h-4" /> Exportar CSV
+            </button>
+          )}
+        />
       </div>
 
       {/* Estadísticas */}
       <div data-onboarding="runt-history-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <p className="text-xs font-bold text-gray-500 uppercase mb-1">Total</p>
-          <p className="text-3xl font-black text-syntix-navy">{stats.total}</p>
-          <p className="text-xs text-gray-500 mt-1">validaciones</p>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <p className="text-xs font-bold text-gray-500 uppercase mb-1">Esta Semana</p>
-          <p className="text-3xl font-black text-syntix-green">{stats.thisWeek}</p>
-          <p className="text-xs text-gray-500 mt-1">consultadas</p>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <p className="text-xs font-bold text-gray-500 uppercase mb-1">Con Alertas</p>
-          <p className="text-3xl font-black text-syntix-red">{stats.withVencimientos}</p>
-          <p className="text-xs text-gray-500 mt-1">vencidas</p>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <p className="text-xs font-bold text-gray-500 uppercase mb-1">Cumplimiento</p>
-          <p className="text-3xl font-black text-syntix-green">{stats.compliancePercentage}%</p>
-          <p className="text-xs text-gray-500 mt-1">vigentes</p>
-        </div>
+        <MetricCard icon={Search} label="Total" value={stats.total} hint="validaciones" />
+        <MetricCard icon={Calendar} label="Esta semana" value={stats.thisWeek} hint="consultadas" tone="blue" />
+        <MetricCard icon={AlertTriangle} label="Con alertas" value={stats.withVencimientos} hint="vencidas" tone="red" />
+        <MetricCard icon={Eye} label="Cumplimiento" value={`${stats.compliancePercentage}%`} hint="vigentes" tone="green" />
       </div>
 
       {/* Filtros */}
-      <div data-onboarding="runt-history-filters" className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-4">
+      <SurfaceCard data-onboarding="runt-history-filters" className="space-y-4 p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Búsqueda */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Buscar por placa..." 
+            <input
+              type="text"
+              placeholder="Buscar por placa..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none"
+              className="field-control pl-9"
             />
           </div>
 
           {/* Filtro Estado */}
-          <select 
+          <select
             value={filterState}
             onChange={(e) => {
               setFilterState(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-syntix-green outline-none"
+            className="field-control font-medium"
           >
             <option value="todos">Todos los estados</option>
             <option value="vigentes">Al d&iacute;a</option>
@@ -183,35 +174,35 @@ export default function HistorialValidacionesPage() {
           {/* Fecha Inicio */}
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={dateRange.start}
               onChange={(e) => {
                 setDateRange({ ...dateRange, start: e.target.value });
                 setCurrentPage(1);
               }}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none"
+              className="field-control pl-9"
             />
           </div>
 
           {/* Fecha Fin */}
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={dateRange.end}
               onChange={(e) => {
                 setDateRange({ ...dateRange, end: e.target.value });
                 setCurrentPage(1);
               }}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-syntix-green focus:border-syntix-green outline-none"
+              className="field-control pl-9"
             />
           </div>
         </div>
-      </div>
+      </SurfaceCard>
 
       {/* Tabla */}
-      <div data-onboarding="runt-history-table" className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <SurfaceCard data-onboarding="runt-history-table" className="overflow-hidden">
         {filteredValidations.length === 0 ? (
           <div className="p-4 sm:p-8">
             <EmptyState
@@ -230,17 +221,17 @@ export default function HistorialValidacionesPage() {
                 const soatState = validation.resultadoRUNT?.data?.soat?.vigente ? 'verde' : 'rojo';
                 const rtmState = validation.resultadoRUNT?.data?.rtm?.vigente ? 'verde' : 'rojo';
                 return (
-                  <article key={validation.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3"><div><p className="text-lg font-black text-syntix-navy">{validation.placa}</p><p className="mt-1 text-xs text-gray-500">{new Date(validation.timestamp).toLocaleString('es-CO')}</p></div><button type="button" onClick={() => handleViewDetails(validation)} className="rounded-lg bg-syntix-navy/5 p-2 text-syntix-navy" aria-label={`Ver detalles ${validation.placa}`}><Eye className="h-4 w-4" /></button></div>
+                  <article key={validation.id} className={`rounded-xl border p-4 shadow-sm ${isDarkMode ? 'border-slate-800 bg-slate-950/50' : 'border-slate-100 bg-white'}`}>
+                    <div className="flex items-start justify-between gap-3"><div><p className={`text-lg font-black ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>{validation.placa}</p><p className={`mt-1 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{new Date(validation.timestamp).toLocaleString('es-CO')}</p></div><button type="button" onClick={() => handleViewDetails(validation)} className="btn-icon text-syntix-blue" aria-label={`Ver detalles ${validation.placa}`}><Eye className="h-4 w-4" /></button></div>
                     <div className="mt-4 flex gap-3"><span className="text-xs font-bold text-gray-500">SOAT</span><StatusBadge status={soatState} /><span className="ml-2 text-xs font-bold text-gray-500">RTM</span><StatusBadge status={rtmState} /></div>
-                    <button type="button" onClick={() => handleDelete(validation.id)} className="mt-4 min-h-10 w-full rounded-lg bg-red-50 text-sm font-bold text-red-600">Eliminar validación</button>
+                    <button type="button" onClick={() => handleDelete(validation.id)} className="btn-danger mt-4 w-full">Eliminar validación</button>
                   </article>
                 );
               })}
             </div>
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-gray-50 text-gray-700 font-semibold border-b border-gray-200">
+              <table className={`w-full text-left text-sm ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
+                <thead className={`border-b font-semibold ${isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-300' : 'border-gray-200 bg-gray-50 text-gray-700'}`}>
                   <tr>
                     <th className="px-6 py-4">Placa</th>
                     <th className="px-6 py-4">Fecha/Hora</th>
@@ -250,7 +241,7 @@ export default function HistorialValidacionesPage() {
                     <th className="px-6 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className={isDarkMode ? 'divide-y divide-slate-800' : 'divide-y divide-gray-100'}>
                   {paginatedValidations.map((validation) => {
                     const soatVigente = validation.resultadoRUNT?.data?.soat?.vigente;
                     const rtmVigente = validation.resultadoRUNT?.data?.rtm?.vigente;
@@ -258,8 +249,8 @@ export default function HistorialValidacionesPage() {
                     const rtmState = rtmVigente ? 'verde' : 'rojo';
 
                     return (
-                      <tr key={validation.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 font-bold text-gray-900">{validation.placa}</td>
+                      <tr key={validation.id} className={`transition-colors ${isDarkMode ? 'hover:bg-slate-800/70' : 'hover:bg-gray-50'}`}>
+                        <td className={`px-6 py-4 font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>{validation.placa}</td>
                         <td className="px-6 py-4 text-xs">
                           {new Date(validation.timestamp).toLocaleString('es-CO')}
                         </td>
@@ -273,14 +264,14 @@ export default function HistorialValidacionesPage() {
                         <td className="px-6 py-4 text-right space-x-2">
                           <button
                             onClick={() => handleViewDetails(validation)}
-                            className="p-2 text-syntix-blue hover:bg-blue-50 rounded-lg transition-colors inline-flex"
+                            className="btn-icon text-syntix-blue"
                             title="Ver detalles"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(validation.id)}
-                            className="p-2 text-syntix-red hover:bg-red-50 rounded-lg transition-colors inline-flex"
+                            className="btn-icon text-syntix-red hover:bg-red-50 hover:text-red-700 dark:text-red-300 dark:hover:bg-red-500/10"
                             title="Eliminar"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -295,22 +286,22 @@ export default function HistorialValidacionesPage() {
 
             {/* Paginación */}
             {totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center bg-gray-50">
-                <p className="text-sm text-gray-600">
+              <div className={`flex items-center justify-between border-t px-6 py-4 ${isDarkMode ? 'border-slate-800 bg-slate-950' : 'border-gray-200 bg-gray-50'}`}>
+                <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
                   Página {currentPage} de {totalPages}
                 </p>
                 <div className="space-x-2">
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="btn-secondary min-h-9 px-3 py-1 text-xs"
                   >
                     Anterior
                   </button>
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="btn-secondary min-h-9 px-3 py-1 text-xs"
                   >
                     Siguiente
                   </button>
@@ -319,7 +310,7 @@ export default function HistorialValidacionesPage() {
             )}
           </>
         )}
-      </div>
+      </SurfaceCard>
 
       {/* Modal Detalles */}
       {selectedValidation && (

@@ -170,7 +170,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
           <button
             type="button"
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="btn-icon"
           >
             <X className="w-6 h-6" />
           </button>
@@ -194,7 +194,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
               onChange={(e) =>
                 setFormData({ ...formData, placa: sanitizePlate(e.target.value) })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900 uppercase font-bold tracking-wider"
+              className="field-control uppercase font-bold tracking-wider"
               placeholder="ABC123"
             />
           </div>
@@ -208,7 +208,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
                 required
                 value={formData.marca}
                 onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+                className="field-control"
                 placeholder="Toyota"
               />
             </div>
@@ -220,7 +220,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
                 required
                 value={formData.modelo}
                 onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+                className="field-control"
                 placeholder="Hilux"
               />
             </div>
@@ -239,7 +239,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
                 onChange={(e) =>
                   setFormData({ ...formData, anio: Number.parseInt(e.target.value, 10) || '' })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900"
+                className="field-control"
               />
             </div>
             <div>
@@ -248,7 +248,7 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
                 id="vehicle-type"
                 value={formData.tipo}
                 onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-syntix-green outline-none text-gray-900 bg-white"
+                className="field-control"
               >
                 {formData.tipo && !VEHICLE_TYPE_OPTIONS.includes(formData.tipo) && (
                   <option value={formData.tipo}>{formData.tipo}</option>
@@ -264,13 +264,13 @@ export default function AddVehicleModal({ isOpen, onClose, vehicleToEdit = null 
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+              className="btn-ghost"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="bg-syntix-navy text-white px-6 py-2 rounded-lg font-medium hover:bg-syntix-navy/90 transition-colors flex items-center gap-2"
+              className="btn-primary px-6"
             >
               <Save className="w-4 h-4" /> {submitLabel}
             </button>

@@ -35,8 +35,8 @@ export default function UserProfileDropdown({ variant = 'light' }) {
   const initial = user.empresa ? user.empresa.charAt(0).toUpperCase() : 'U';
   const isDark = variant === 'dark';
   const triggerClassName = isDark
-    ? 'flex items-center gap-3 rounded-full p-1.5 transition-colors focus:outline-none hover:bg-white/10'
-    : 'flex items-center gap-3 rounded-full p-1.5 transition-colors focus:outline-none hover:bg-gray-100';
+    ? 'flex items-center gap-3 rounded-full p-1.5 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900'
+    : 'flex items-center gap-3 rounded-full p-1.5 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-syntix-blue/50 focus-visible:ring-offset-2';
   const companyClassName = isDark ? 'text-sm font-bold text-white' : 'text-sm font-bold text-syntix-navy';
   const emailClassName = isDark ? 'text-xs text-gray-300' : 'text-xs text-gray-500';
   // El menú oscuro solo se aplica dentro del header autenticado cuando además
@@ -51,7 +51,7 @@ export default function UserProfileDropdown({ variant = 'light' }) {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className={triggerClassName}
       >
@@ -59,7 +59,7 @@ export default function UserProfileDropdown({ variant = 'light' }) {
           <p className={companyClassName}>{user.empresa}</p>
           <p className={emailClassName}>{user.email}</p>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-syntix-green text-lg font-bold text-white shadow-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-syntix-blue text-lg font-bold text-white shadow-sm">
           {initial}
         </div>
       </button>
@@ -73,33 +73,33 @@ export default function UserProfileDropdown({ variant = 'light' }) {
             <p className={`truncate text-xs ${useDarkMenu ? 'text-slate-400' : 'text-gray-500'}`}>{user.email}</p>
           </div>
 
-          <Link 
-            to="/perfil" 
+          <Link
+            to="/perfil"
             onClick={() => setIsOpen(false)}
             className={itemClassName}
           >
             <User className="w-4 h-4" /> Perfil
           </Link>
-          
-          <Link 
-            to="/dashboard" 
+
+          <Link
+            to="/dashboard"
             onClick={() => setIsOpen(false)}
             className={itemClassName}
           >
             <LayoutDashboard className="w-4 h-4" /> Dashboard
           </Link>
-          
-          <Link 
-            to="/configuracion" 
+
+          <Link
+            to="/configuracion"
             onClick={() => setIsOpen(false)}
             className={itemClassName}
           >
             <Settings className="w-4 h-4" /> Configuración
           </Link>
-          
+
           <div className={`my-1 h-px ${useDarkMenu ? 'bg-slate-800' : 'bg-gray-100'}`}></div>
-          
-          <button 
+
+          <button
             onClick={handleLogout}
             className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-syntix-red transition-colors ${
               useDarkMenu ? 'hover:bg-red-500/10' : 'hover:bg-red-50'
