@@ -1,35 +1,81 @@
 import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Helmet } from 'react-helmet';
-import { BellRing, Calendar, ChevronDown, ChevronRight } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext.jsx';
+import {
+  AlertTriangle,
+  ArrowRight,
+  BellRing,
+  Calendar,
+  Car,
+  CheckCircle2,
+  FilePenLine,
+  ShieldCheck,
+  Users,
+  Wrench,
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import AddConductorModal from '@/components/AddConductorModal.jsx';
+import EditRtmModal from '@/components/EditRtmModal.jsx';
+import EditSoatModal from '@/components/EditSoatModal.jsx';
+import ModalFactory from '@/components/ModalFactory.jsx';
+import StatusBadge from '@/components/StatusBadge.jsx';
+import {
+  EmptyState,
+  LoadingState,
+  MetricCard,
+  PageHeader,
+  SurfaceCard,
+} from '@/components/UI/SaasUI.jsx';
+import { useConductors } from '@/hooks/useConductors.js';
 import { useAlerts } from '@/hooks/useAlerts.js';
+import { useDocuments } from '@/hooks/useDocuments.js';
+import useModalManager from '@/hooks/useModalManager.js';
 import { useSimulatedDate } from '@/hooks/useSimulatedDate.js';
-import { getExpirationAlertText, getStatusLabel } from '@/utils/dateUtils.js';
+import { useRtm } from '@/contexts/RtmContext.jsx';
+import { useTheme } from '@/contexts/ThemeContext.jsx';
+import {
+  getAlertActionModel,
+  getAlertPresentation,
+  getAlertsSummary,
+  getAlertSourceId,
+} from '@/utils/alertActions.js';
 
 const alertSections = [
   {
     id: 'vehiculos',
     title: 'Vehículos',
-    description: 'Alertas documentales asociadas a la flota.',
+    description: 'SOAT y revisiones técnico-mecánicas que requieren gestión.',
+    icon: Car,
     groups: [
-      { key: 'SOAT', title: 'SOAT' },
-      { key: 'RTM', title: 'RTM' },
+      {
+        key: 'SOAT',
+        title: 'SOAT',
+        description: 'Pólizas faltantes, vencidas o próximas a vencer.',
+        icon: ShieldCheck,
+      },
+      {
+        key: 'RTM',
+        title: 'RTM',
+        description: 'Revisiones técnico-mecánicas que requieren seguimiento.',
+        icon: Wrench,
+      },
     ],
   },
   {
     id: 'conductores',
     title: 'Conductores',
-    description: 'Alertas por vigencia de licencias de conduccion.',
+    description: 'Licencias y asignaciones que necesitan atención operativa.',
+    icon: Users,
     groups: [
-      { key: 'Licencias', title: 'Licencias' },
+      {
+        key: 'Licencias',
+        title: 'Licencias',
+        description: 'Vigencias de licencia y conductores pendientes de asignación.',
+        icon: Users,
+      },
     ],
   },
 ];
-
-const toggleMapValue = (setter, key) => {
-  setter((prev) => ({ ...prev, [key]: !prev[key] }));
-};
 
 const alertShape = PropTypes.shape({
   id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -44,317 +90,332 @@ const alertShape = PropTypes.shape({
   fechaVencimiento: PropTypes.string,
 });
 
-const getCriticalToneClassName = (isCritical, isDarkMode, criticalClassName, warningClassName) => {
-  if (isCritical) {
-    return isDarkMode ? criticalClassName.dark : criticalClassName.light;
-  }
-
-  return isDarkMode ? warningClassName.dark : warningClassName.light;
-};
-
-// Centro de alertas: deja ver el estado consolidado del sistema para una fecha dada.
 export default function AlertasPage() {
-  const { alerts, totalActiveAlerts, isReady, isLoading } = useAlerts();
-  const { isDarkMode } = useTheme();
+  const { alerts, isReady, isLoading } = useAlerts();
+  const { soats } = useDocuments();
+  const { rtms } = useRtm();
+  const { conductores } = useConductors();
   const { simulatedDate, setSimulatedDate, resetDate } = useSimulatedDate();
-  const [openSections, setOpenSections] = useState({ vehiculos: true, conductores: true });
-  const [openGroups, setOpenGroups] = useState({ SOAT: true, RTM: true, Licencias: true });
+  const { activeModal, openModal, closeModal } = useModalManager();
+  const [soatToEdit, setSoatToEdit] = useState(null);
+  const [rtmToEdit, setRtmToEdit] = useState(null);
+  const [conductorToEdit, setConductorToEdit] = useState(null);
 
-  const alertCount = isReady ? totalActiveAlerts : 0;
+  const handleAlertAction = (alert, actionKind) => {
+    if (actionKind === 'register-soat') openModal('addDocument');
+    if (actionKind === 'register-rtm') openModal('addRtm');
+    if (actionKind === 'update-soat') {
+      setSoatToEdit(soats.find((item) => String(item.id) === getAlertSourceId(alert, 'soat-')) || null);
+    }
+    if (actionKind === 'update-rtm') {
+      setRtmToEdit(rtms.find((item) => String(item.id) === getAlertSourceId(alert, 'rtm-')) || null);
+    }
+    if (actionKind === 'update-license') {
+      setConductorToEdit(conductores.find((item) => String(item.id) === getAlertSourceId(alert, 'lic-')) || null);
+    }
+  };
 
-  const groupedAlerts = useMemo(() => {
-    // Se agrupan por categoría y subgrupo para que el usuario entienda rápido
-    // si el problema pertenece a vehículos, licencias u otro frente operativo.
-    return alerts.reduce((acc, alert) => {
-      const category = alert.categoria || 'general';
-      const group = alert.grupo || alert.tipo || 'General';
-      const key = `${category}:${group}`;
+  return (
+    <>
+      <AlertsCenterView
+        alerts={isReady ? alerts : []}
+        isLoading={isLoading}
+        simulatedDate={simulatedDate}
+        onSimulatedDateChange={setSimulatedDate}
+        onResetDate={resetDate}
+        onAlertAction={handleAlertAction}
+      />
+      <ModalFactory modalType={activeModal} onClose={closeModal} />
+      <EditSoatModal isOpen={Boolean(soatToEdit)} soat={soatToEdit} onClose={() => setSoatToEdit(null)} />
+      <EditRtmModal isOpen={Boolean(rtmToEdit)} rtm={rtmToEdit} onClose={() => setRtmToEdit(null)} />
+      <AddConductorModal
+        isOpen={Boolean(conductorToEdit)}
+        conductorToEdit={conductorToEdit}
+        onClose={() => setConductorToEdit(null)}
+      />
+    </>
+  );
+}
 
-      acc[key] = acc[key] || [];
-      acc[key].push(alert);
+export function AlertsCenterView({
+  alerts,
+  isLoading = false,
+  basePath = '',
+  readOnly = false,
+  simulatedDate,
+  onSimulatedDateChange,
+  onResetDate,
+  onAlertAction,
+}) {
+  const { isDarkMode } = useTheme();
+  const to = (path) => `${basePath}${path}`;
+  const summary = useMemo(() => getAlertsSummary(alerts), [alerts]);
+  const groupedAlerts = useMemo(() => alerts.reduce((groups, alert) => {
+    const key = `${alert.categoria || 'general'}:${alert.grupo || alert.tipo || 'General'}`;
+    groups[key] = [...(groups[key] || []), alert];
+    return groups;
+  }, {}), [alerts]);
+  const hasDateSimulator = Boolean(simulatedDate && onSimulatedDateChange && onResetDate);
 
-      return acc;
-    }, {});
-  }, [alerts]);
-
-  const getGroupAlerts = (category, groupKey) => groupedAlerts[`${category}:${groupKey}`] || [];
-  const getSectionCount = (section) =>
-    section.groups.reduce((total, group) => total + getGroupAlerts(section.id, group.key).length, 0);
+  const dateSimulator = hasDateSimulator ? (
+    <div data-onboarding="alerts-date-filter" className={`flex w-full items-center gap-3 rounded-xl border p-2 shadow-sm sm:w-auto ${
+      isDarkMode ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
+    }`}>
+      <Calendar className={`ml-1 h-5 w-5 shrink-0 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+      <div className="min-w-0 flex-1">
+        <label htmlFor="alerts-simulated-date" className={`block text-[10px] font-bold uppercase tracking-wider ${
+          isDarkMode ? 'text-slate-400' : 'text-slate-500'
+        }`}>Simular fecha</label>
+        <input
+          id="alerts-simulated-date"
+          type="date"
+          value={simulatedDate}
+          onChange={(event) => onSimulatedDateChange(event.target.value)}
+          className={`w-full bg-transparent text-sm font-semibold outline-none ${
+            isDarkMode ? 'text-slate-100' : 'text-syntix-navy'
+          }`}
+          style={{ colorScheme: isDarkMode ? 'dark' : 'light' }}
+        />
+      </div>
+      <button type="button" data-onboarding="alerts-reset-date" onClick={onResetDate} className="btn-ghost min-h-9 px-3 py-1 text-xs">
+        Hoy
+      </button>
+    </div>
+  ) : null;
 
   return (
     <div className="space-y-6">
-      <Helmet>
-        <title>Alertas | DriveControl</title>
-      </Helmet>
+      <Helmet><title>{readOnly ? 'Alertas | Demo DriveControl' : 'Alertas | DriveControl'}</title></Helmet>
 
-      <div data-onboarding="alerts-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>Centro de Alertas</h1>
-          <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>Notificaciones automaticas basadas en la Regla de Oro</p>
-        </div>
-
-        <div data-onboarding="alerts-date-filter" className={`flex items-center gap-3 rounded-lg border p-2 shadow-sm ${
-          isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-200 bg-white'
-        }`}>
-          <Calendar className={`ml-2 w-5 h-5 ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} />
-          <div className="flex flex-col">
-            <label htmlFor="alerts-simulated-date" className={`text-xs font-bold uppercase ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>Simular Fecha</label>
-            <input
-              id="alerts-simulated-date"
-              type="date"
-              value={simulatedDate}
-              onChange={(e) => setSimulatedDate(e.target.value)}
-              className={`bg-transparent text-sm font-medium outline-none ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}
-              style={{ colorScheme: isDarkMode ? 'dark' : 'light' }}
-            />
-          </div>
-          <button
-            data-onboarding="alerts-reset-date"
-            onClick={resetDate}
-            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-              isDarkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-gray-100 hover:bg-gray-200'
-            }`}
-          >
-            Hoy
-          </button>
-        </div>
+      <div data-onboarding="alerts-header">
+        <PageHeader
+          eyebrow={readOnly ? 'Demo de producto' : 'Gestión preventiva'}
+          title="Centro de Alertas"
+          description="Prioriza documentos faltantes, vencimientos críticos y acciones preventivas de la flota."
+          actions={dateSimulator}
+        />
       </div>
 
-      <div data-onboarding="alerts-list" className={`rounded-2xl border p-6 shadow-sm ${
-        isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'
-      }`}>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className={`flex items-center gap-2 text-lg font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>
-            <BellRing className="w-5 h-5 text-syntix-navy" /> Alertas Activas ({isLoading ? '...' : alertCount})
-          </h2>
-        </div>
-
-        {alertCount === 0 && (
-          <div className={`mb-6 rounded-xl border border-dashed py-8 text-center ${
-            isDarkMode ? 'border-slate-700 bg-slate-950/60 text-slate-400' : 'border-gray-200 bg-gray-50 text-gray-500'
-          }`}>
-            <p className="font-bold">No hay alertas pendientes</p>
-            <p className="mt-2 text-sm">Cuando un documento esté por vencer o requiera revisión, aparecerá aquí.</p>
+      {isLoading ? (
+        <LoadingState label="Organizando alertas de la flota..." />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <MetricCard icon={AlertTriangle} label="Críticas" value={summary.critical} hint="Requieren atención inmediata" tone="red" />
+            <MetricCard icon={BellRing} label="Preventivas" value={summary.preventive} hint="Conviene gestionarlas pronto" tone="amber" />
+            <MetricCard icon={Car} label="Vehículos afectados" value={summary.vehicles} hint="Unidades con alertas activas" tone="navy" />
+            <MetricCard icon={Users} label="Conductores afectados" value={summary.conductors} hint="Licencias o asignaciones" tone="blue" />
           </div>
-        )}
 
-        <div className="space-y-4">
-          {alertSections.map((section) => (
-            <AlertSection
-              key={section.id}
-              section={section}
-              count={getSectionCount(section)}
-              isOpen={Boolean(openSections[section.id])}
-              onToggle={() => toggleMapValue(setOpenSections, section.id)}
-              openGroups={openGroups}
-              onGroupToggle={(groupKey) => toggleMapValue(setOpenGroups, groupKey)}
-              getGroupAlerts={getGroupAlerts}
-              isDarkMode={isDarkMode}
-            />
-          ))}
-        </div>
-      </div>
+          {alerts.length === 0 && (
+            <SurfaceCard className="p-4">
+              <EmptyState
+                icon={CheckCircle2}
+                title="La flota no tiene alertas activas"
+                description="Los documentos y licencias monitoreados se encuentran al día para la fecha seleccionada."
+                compact
+              />
+            </SurfaceCard>
+          )}
+
+          <div data-onboarding="alerts-list" className="space-y-6">
+            {alertSections.map((section) => (
+              <AlertSection
+                key={section.id}
+                section={section}
+                groupedAlerts={groupedAlerts}
+                basePath={basePath}
+                readOnly={readOnly}
+                onAlertAction={onAlertAction}
+                isDarkMode={isDarkMode}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-function AlertSection({
-  section,
-  count,
-  isOpen,
-  onToggle,
-  openGroups,
-  onGroupToggle,
-  getGroupAlerts,
-  isDarkMode,
-}) {
-  const Icon = isOpen ? ChevronDown : ChevronRight;
+function AlertSection({ section, groupedAlerts, basePath, readOnly, onAlertAction, isDarkMode }) {
+  const sectionAlerts = section.groups.flatMap((group) => groupedAlerts[`${section.id}:${group.key}`] || []);
+  const Icon = section.icon;
 
   return (
-    // Cada sección agrupa una familia de alertas y puede contraerse para
-    // mantener la vista compacta incluso cuando el volumen crece.
-    <section className={`overflow-hidden rounded-xl border ${
-      isDarkMode ? 'border-slate-800 bg-slate-950/60' : 'border-gray-100 bg-gray-50/60'
-    }`}>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        className={`w-full flex items-center justify-between gap-4 px-4 py-4 text-left transition-colors ${
-          isDarkMode ? 'hover:bg-slate-800/80' : 'hover:bg-gray-50'
-        }`}
-      >
-        <span className="flex items-center gap-3 min-w-0">
-          <Icon className={`w-5 h-5 shrink-0 ${isDarkMode ? 'text-slate-200' : 'text-syntix-navy'}`} />
-          <span>
-            <span className={`block font-bold ${isDarkMode ? 'text-slate-100' : 'text-syntix-navy'}`}>
-              {section.title} ({count})
-            </span>
-            <span className={`mt-1 block text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{section.description}</span>
-          </span>
-        </span>
-      </button>
-
-      {isOpen && (
-        <div className="px-4 pb-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {section.groups.map((group) => {
-            const groupAlerts = getGroupAlerts(section.id, group.key);
-
-            return (
-              <AlertGroup
-                key={`${section.id}-${group.key}`}
-                title={group.title}
-                alerts={groupAlerts}
-                isOpen={Boolean(openGroups[group.key])}
-                onToggle={() => onGroupToggle(group.key)}
-                isDarkMode={isDarkMode}
-              />
-            );
-          })}
+    <SurfaceCard className="overflow-hidden">
+      <div className={`flex items-start justify-between gap-4 border-b px-4 py-5 sm:px-6 ${
+        isDarkMode ? 'border-slate-800 bg-slate-950/45' : 'border-slate-100 bg-slate-50/60'
+      }`}>
+        <div className="flex items-start gap-3">
+          <div className={`rounded-xl p-2.5 ${isDarkMode ? 'bg-slate-800 text-blue-300' : 'bg-white text-syntix-navy shadow-sm'}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className={`font-black ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{section.title}</h2>
+            <p className={`mt-1 text-xs leading-5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{section.description}</p>
+          </div>
         </div>
-      )}
+        <StatusBadge status={sectionAlerts.length ? 'pendiente' : 'verde'} label={`${sectionAlerts.length} activas`} />
+      </div>
+
+      <div className={`grid grid-cols-1 gap-4 p-4 sm:p-6 ${section.groups.length > 1 ? 'xl:grid-cols-2' : ''}`}>
+        {section.groups.map((group) => (
+          <AlertGroup
+            key={`${section.id}:${group.key}`}
+            group={group}
+            alerts={groupedAlerts[`${section.id}:${group.key}`] || []}
+            basePath={basePath}
+            readOnly={readOnly}
+            onAlertAction={onAlertAction}
+            isDarkMode={isDarkMode}
+          />
+        ))}
+      </div>
+    </SurfaceCard>
+  );
+}
+
+function AlertGroup({ group, alerts, basePath, readOnly, onAlertAction, isDarkMode }) {
+  const Icon = group.icon;
+
+  return (
+    <section className={`rounded-2xl border p-4 sm:p-5 ${
+      isDarkMode ? 'border-slate-800 bg-slate-950/35' : 'border-slate-200/80 bg-slate-50/55'
+    }`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className={`rounded-xl p-2 ${isDarkMode ? 'bg-slate-800 text-slate-200' : 'bg-white text-syntix-navy shadow-sm'}`}>
+            <Icon className="h-4 w-4" />
+          </div>
+          <div>
+            <h3 className={`font-black ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{group.title}</h3>
+            <p className={`mt-1 text-xs leading-5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{group.description}</p>
+          </div>
+        </div>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+          isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600 shadow-sm'
+        }`}>{alerts.length}</span>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {alerts.length === 0 ? (
+          <div className={`rounded-xl border border-dashed p-5 text-center ${
+            isDarkMode ? 'border-slate-700 bg-slate-900/50' : 'border-slate-200 bg-white/80'
+          }`}>
+            <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
+            <p className={`mt-2 text-sm font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>Sin alertas en este grupo</p>
+            <p className={`mt-1 text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>No hay acciones pendientes por ahora.</p>
+          </div>
+        ) : (
+          alerts.map((alert) => (
+            <AlertCard
+              key={alert.id}
+              alert={alert}
+              basePath={basePath}
+              readOnly={readOnly}
+              onAlertAction={onAlertAction}
+              isDarkMode={isDarkMode}
+            />
+          ))
+        )}
+      </div>
     </section>
   );
 }
 
-function AlertGroup({ title, alerts, isOpen, onToggle, isDarkMode }) {
-  const Icon = isOpen ? ChevronDown : ChevronRight;
-
-  return (
-    <div className={`overflow-hidden rounded-xl border ${
-      isDarkMode ? 'border-slate-800 bg-slate-900' : 'border-gray-100 bg-white'
-    }`}>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        className={`w-full flex items-center justify-between gap-3 p-4 text-left transition-colors ${
-          isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-gray-50'
-        }`}
-      >
-        <span className={`flex items-center gap-2 font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>
-          <Icon className={`w-4 h-4 shrink-0 ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`} />
-          {title} ({alerts.length})
-        </span>
-      </button>
-
-      {isOpen && (
-        <div className="px-4 pb-4">
-          {alerts.length === 0 ? (
-            <div className={`rounded-lg border border-dashed p-4 text-sm ${
-              isDarkMode ? 'border-slate-700 bg-slate-950/60 text-slate-400' : 'border-gray-200 bg-gray-50 text-gray-500'
-            }`}>
-              No hay alertas pendientes en este grupo.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {alerts.map((alert) => (
-                <AlertItem key={alert.id} alert={alert} isDarkMode={isDarkMode} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AlertItem({ alert, isDarkMode }) {
+function AlertCard({ alert, basePath, readOnly, onAlertAction, isDarkMode }) {
+  const presentation = getAlertPresentation(alert);
+  const actions = getAlertActionModel(alert);
   const isCritical = alert.prioridad === 'rojo';
-  const expirationText = getExpirationAlertText(alert.diasRestantes, alert.fechaVencimiento);
-  const containerClassName = getCriticalToneClassName(
-    isCritical,
-    isDarkMode,
-    { dark: 'bg-red-950/35 border-red-900', light: 'bg-red-50 border-red-100' },
-    { dark: 'bg-amber-950/30 border-amber-900', light: 'bg-yellow-50 border-yellow-100' }
-  );
-  const iconClassName = getCriticalToneClassName(
-    isCritical,
-    isDarkMode,
-    { dark: 'bg-red-950/80 text-red-300', light: 'bg-red-100 text-syntix-red' },
-    { dark: 'bg-amber-950/80 text-amber-300', light: 'bg-yellow-100 text-yellow-600' }
-  );
-  const titleClassName = getCriticalToneClassName(
-    isCritical,
-    isDarkMode,
-    { dark: 'text-red-200', light: 'text-red-900' },
-    { dark: 'text-amber-200', light: 'text-yellow-900' }
-  );
-  const badgeClassName = getCriticalToneClassName(
-    isCritical,
-    isDarkMode,
-    { dark: 'bg-red-900 text-red-200', light: 'bg-red-200 text-red-800' },
-    { dark: 'bg-amber-900 text-amber-200', light: 'bg-yellow-200 text-yellow-800' }
-  );
-  const bodyClassName = getCriticalToneClassName(
-    isCritical,
-    isDarkMode,
-    { dark: 'text-red-300', light: 'text-red-700' },
-    { dark: 'text-amber-300', light: 'text-yellow-700' }
-  );
-  const detailClassName = getCriticalToneClassName(
-    isCritical,
-    isDarkMode,
-    { dark: 'text-red-200', light: 'text-red-800' },
-    { dark: 'text-amber-200', light: 'text-yellow-800' }
-  );
-  const statusLabel = getStatusLabel(alert.prioridad);
+  const accentClass = isCritical ? 'border-l-red-500' : 'border-l-amber-500';
+  const iconClass = isCritical
+    ? 'bg-red-500/10 text-red-500 dark:text-red-400'
+    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+  const to = (path) => `${basePath}${path}`;
+  const shouldUseButton = !readOnly && actions.primary.canMutate && onAlertAction;
 
   return (
-    <div className={`p-4 rounded-xl border flex items-start gap-4 shadow-sm ${containerClassName}`}>
-      <div className={`p-2 rounded-lg ${iconClassName}`}>
-        <BellRing className="w-5 h-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start gap-3">
-          <h5 className={`font-bold ${titleClassName}`}>
-            Alerta {isCritical ? 'cr\u00edtica' : 'por vencer'}
-          </h5>
-          <span className={`text-xs font-bold px-2 py-1 rounded-md whitespace-nowrap ${badgeClassName}`}>
-            {statusLabel}
-          </span>
+    <article className={`rounded-xl border border-l-4 p-4 shadow-sm ${accentClass} ${
+      isDarkMode ? 'border-y-slate-800 border-r-slate-800 bg-slate-900' : 'border-y-slate-200 border-r-slate-200 bg-white'
+    }`}>
+      <div className="flex items-start gap-3">
+        <div className={`shrink-0 rounded-xl p-2 ${iconClass}`}><BellRing className="h-4 w-4" /></div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className={`font-black ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{presentation.title}</p>
+              <p className={`mt-1 text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                {alert.grupo || alert.tipo}
+              </p>
+            </div>
+            <StatusBadge status={alert.prioridad} label={isCritical ? 'Crítica' : 'Preventiva'} />
+          </div>
+          <p className={`mt-3 text-sm leading-6 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>{presentation.description}</p>
+          <p className={`mt-2 text-xs font-semibold leading-5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{presentation.guidance}</p>
         </div>
-        <p className={`text-sm mt-1 ${bodyClassName}`}>
-          <span className="font-semibold">{alert.tipo}:</span> {alert.entidad}
-        </p>
-        <p className={`text-xs mt-2 font-semibold ${detailClassName}`}>
-          {alert.reason || expirationText.fullText}
-        </p>
       </div>
-    </div>
+
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        {shouldUseButton ? (
+          <button type="button" onClick={() => onAlertAction(alert, actions.primary.kind)} className="btn-primary min-h-10 px-3 text-xs">
+            <FilePenLine className="h-4 w-4" /> {actions.primary.label}
+          </button>
+        ) : (
+          <Link to={to(actions.primary.route)} className="btn-primary min-h-10 px-3 text-xs">
+            {actions.primary.label} <ArrowRight className="h-4 w-4" />
+          </Link>
+        )}
+        <Link to={to(actions.secondary.route)} className="btn-secondary min-h-10 px-3 text-xs">
+          {actions.secondary.label}
+        </Link>
+      </div>
+    </article>
   );
 }
+
+AlertsCenterView.propTypes = {
+  alerts: PropTypes.arrayOf(alertShape).isRequired,
+  isLoading: PropTypes.bool,
+  basePath: PropTypes.string,
+  readOnly: PropTypes.bool,
+  simulatedDate: PropTypes.string,
+  onSimulatedDateChange: PropTypes.func,
+  onResetDate: PropTypes.func,
+  onAlertAction: PropTypes.func,
+};
 
 AlertSection.propTypes = {
   section: PropTypes.shape({
     id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
-    groups: PropTypes.arrayOf(
-      PropTypes.shape({
-        key: PropTypes.string.isRequired,
-        title: PropTypes.string.isRequired,
-      })
-    ).isRequired,
+    icon: PropTypes.elementType.isRequired,
+    groups: PropTypes.arrayOf(PropTypes.object).isRequired,
   }).isRequired,
-  count: PropTypes.number.isRequired,
-  isOpen: PropTypes.bool.isRequired,
-  onToggle: PropTypes.func.isRequired,
-  openGroups: PropTypes.object.isRequired,
-  onGroupToggle: PropTypes.func.isRequired,
-  getGroupAlerts: PropTypes.func.isRequired,
+  groupedAlerts: PropTypes.object.isRequired,
+  basePath: PropTypes.string.isRequired,
+  readOnly: PropTypes.bool.isRequired,
+  onAlertAction: PropTypes.func,
   isDarkMode: PropTypes.bool.isRequired,
 };
 
 AlertGroup.propTypes = {
-  title: PropTypes.string.isRequired,
+  group: PropTypes.shape({
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    icon: PropTypes.elementType.isRequired,
+  }).isRequired,
   alerts: PropTypes.arrayOf(alertShape).isRequired,
-  isOpen: PropTypes.bool.isRequired,
-  onToggle: PropTypes.func.isRequired,
+  basePath: PropTypes.string.isRequired,
+  readOnly: PropTypes.bool.isRequired,
+  onAlertAction: PropTypes.func,
   isDarkMode: PropTypes.bool.isRequired,
 };
 
-AlertItem.propTypes = {
+AlertCard.propTypes = {
   alert: alertShape.isRequired,
+  basePath: PropTypes.string.isRequired,
+  readOnly: PropTypes.bool.isRequired,
+  onAlertAction: PropTypes.func,
   isDarkMode: PropTypes.bool.isRequired,
 };

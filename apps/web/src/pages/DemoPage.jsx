@@ -4,7 +4,6 @@ import { Helmet } from 'react-helmet';
 import {
   AlertTriangle,
   BarChart3,
-  BellRing,
   Car,
   Download,
   FileText,
@@ -14,6 +13,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import DashboardView from '@/components/DashboardView.jsx';
+import { AlertsCenterView } from '@/pages/AlertasPage.jsx';
 import StatusBadge from '@/components/StatusBadge.jsx';
 import {
   EmptyState,
@@ -166,28 +166,7 @@ function DemoDocuments() {
 
 function DemoAlerts() {
   const { alerts } = useDemo();
-  const { isDarkMode } = useTheme();
-  const [status, setStatus] = useState('todos');
-  const filtered = alerts.filter((alert) => status === 'todos' || alert.prioridad === status);
-  return (
-    <DemoModuleShell title="Centro de alertas" description="Prioriza riesgos documentales y asignaciones pendientes antes de que afecten la operación.">
-      <Filters status={status} setStatus={setStatus} />
-      <div className="space-y-3">
-        {filtered.map((alert) => (
-          <SurfaceCard key={alert.id} className="p-4">
-            <div className="flex items-start gap-3">
-              <div className={`rounded-xl p-2 ${alert.prioridad === 'rojo' ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-600'}`}><BellRing className="h-5 w-5" /></div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-start justify-between gap-2"><p className={`font-black ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{alert.mensaje}</p><StatusBadge status={alert.prioridad} /></div>
-                <p className={`mt-1 text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{alert.entidad}</p>
-                <p className={`mt-2 text-xs font-semibold ${alert.prioridad === 'rojo' ? 'text-red-500' : 'text-amber-600'}`}>{alert.reason}</p>
-              </div>
-            </div>
-          </SurfaceCard>
-        ))}
-      </div>
-    </DemoModuleShell>
-  );
+  return <AlertsCenterView alerts={alerts} basePath="/demo" readOnly />;
 }
 
 function DemoReports() {

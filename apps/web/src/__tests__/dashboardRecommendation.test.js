@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getRecommendedAction } from '@/components/DashboardView.jsx';
+import { buildRecommendationDetail, getRecommendedAction } from '@/components/DashboardView.jsx';
 
 describe('getRecommendedAction', () => {
   it('prioriza alertas críticas aunque existan alertas preventivas', () => {
@@ -43,5 +43,23 @@ describe('getRecommendedAction', () => {
       tone: 'positive',
       alert: null,
     });
+  });
+
+  it('resume alertas críticas sin repetir el mismo mensaje', () => {
+    const detail = buildRecommendationDetail([
+      { grupo: 'SOAT', entidad: 'Vehiculo JSU502' },
+      { grupo: 'RTM', entidad: 'Vehiculo JSU502' },
+    ], 'critical');
+
+    expect(detail).toBe('2 alertas críticas activas: SOAT y RTM pendientes para Vehículo JSU502.');
+  });
+
+  it('usa un resumen preventivo cuando hay vencimientos en varias unidades', () => {
+    const detail = buildRecommendationDetail([
+      { grupo: 'SOAT', entidad: 'Vehiculo ABC123' },
+      { grupo: 'SOAT', entidad: 'Vehiculo XYZ987' },
+    ], 'preventive');
+
+    expect(detail).toBe('2 alertas preventivas activas: SOAT pendientes en la flota.');
   });
 });

@@ -99,7 +99,13 @@ export default function DashboardView({
         <LoadingState />
       ) : (
         <>
-          <RecommendedActionCard recommendation={recommendation} to={to} isDarkMode={isDarkMode} />
+          <RecommendedActionCard
+            recommendation={recommendation}
+            to={to}
+            isDarkMode={isDarkMode}
+            onAddSoat={onAddSoat}
+            onAddRtm={onAddRtm}
+          />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
             {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
@@ -189,8 +195,9 @@ export function getRecommendedAction(alerts = []) {
     return {
       tone: 'critical',
       title: 'Hay alertas críticas que requieren revisión inmediata.',
-      description: 'Prioriza los documentos vencidos o con mayor riesgo operativo.',
+      description: buildRecommendationDetail(critical, 'critical'),
       alert: critical[0],
+      count: critical.length,
     };
   }
 
@@ -199,8 +206,9 @@ export function getRecommendedAction(alerts = []) {
     return {
       tone: 'preventive',
       title: 'El próximo vencimiento requiere seguimiento preventivo.',
-      description: 'Revisa el documento más cercano antes de que se convierta en alerta crítica.',
+      description: buildRecommendationDetail(preventive, 'preventive'),
       alert: preventive[0],
+      count: preventive.length,
     };
   }
 
@@ -209,13 +217,32 @@ export function getRecommendedAction(alerts = []) {
     title: 'La flota no tiene alertas activas en este momento.',
     description: 'Mantén actualizados los documentos para conservar este estado.',
     alert: null,
+    count: 0,
   };
 }
 
-function RecommendedActionCard({ recommendation, to, isDarkMode }) {
+export function buildRecommendationDetail(alerts = [], tone = 'critical') {
+  const uniqueTopics = [...new Set(alerts.map((alert) => alert.grupo || alert.tipo).filter(Boolean))].slice(0, 2);
+  const uniqueEntities = [...new Set(alerts.map((alert) => String(alert.entidad || '').replace(/^Vehiculo\b/i, 'Vehículo')).filter(Boolean))];
+  const count = alerts.length;
+  const topicText = uniqueTopics.length > 0 ? uniqueTopics.join(' y ') : 'documentos';
+  const entityText = uniqueEntities.length === 1 ? ` para ${uniqueEntities[0]}` : ' en la flota';
+  const levelText = tone === 'critical' ? 'crítica' : 'preventiva';
+  const plural = count === 1 ? '' : 's';
+
+  return `${count} alerta${plural} ${levelText}${plural} activa${plural}: ${topicText} pendiente${plural}${entityText}.`;
+}
+
+function RecommendedActionCard({ recommendation, to, isDarkMode, onAddSoat, onAddRtm }) {
   const isCritical = recommendation.tone === 'critical';
   const isPreventive = recommendation.tone === 'preventive';
   const Icon = isCritical ? AlertTriangle : isPreventive ? BellRing : ShieldCheck;
+  const alertId = String(recommendation.alert?.id || '');
+  const contextualAction = alertId.startsWith('missing-soat-')
+    ? { label: 'Registrar SOAT', onClick: onAddSoat, icon: FilePlus2 }
+    : alertId.startsWith('missing-rtm-')
+      ? { label: 'Registrar RTM', onClick: onAddRtm, icon: Wrench }
+      : null;
   const accentClass = isCritical
     ? 'border-l-red-500'
     : isPreventive
@@ -240,15 +267,15 @@ function RecommendedActionCard({ recommendation, to, isDarkMode }) {
             <p className={`mt-1 text-sm leading-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               {recommendation.description}
             </p>
-            {recommendation.alert && (
-              <p className={`mt-2 text-xs font-semibold ${isCritical ? 'text-red-500' : 'text-amber-600 dark:text-amber-400'}`}>
-                {recommendation.alert.mensaje} · {recommendation.alert.reason || recommendation.alert.entidad}
-              </p>
-            )}
           </div>
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
           <Link to={to('/alertas')} className="btn-primary">Ver alertas <ArrowRight className="h-4 w-4" /></Link>
+          {contextualAction && (
+            <button type="button" onClick={contextualAction.onClick} className="btn-secondary">
+              <contextualAction.icon className="h-4 w-4" /> {contextualAction.label}
+            </button>
+          )}
           <Link to={to('/documentos')} className="btn-secondary">Revisar documentos</Link>
         </div>
       </div>
@@ -343,9 +370,12 @@ RecommendedActionCard.propTypes = {
     title: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
     alert: PropTypes.object,
+    count: PropTypes.number.isRequired,
   }).isRequired,
   to: PropTypes.func.isRequired,
   isDarkMode: PropTypes.bool.isRequired,
+  onAddSoat: PropTypes.func.isRequired,
+  onAddRtm: PropTypes.func.isRequired,
 };
 
 SectionHeading.propTypes = {
