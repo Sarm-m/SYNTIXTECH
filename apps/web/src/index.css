@@ -250,6 +250,56 @@ textarea:focus-visible {
   -webkit-text-fill-color: #374151;
 }
 
+.dark .document-modal {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+.dark .document-modal .document-modal-header {
+  border-color: #334155;
+  background-color: #020617;
+}
+
+.dark .document-modal .document-modal-header h2,
+.dark .document-modal h3,
+.dark .document-modal label,
+.dark .document-modal .document-modal-label {
+  color: #e2e8f0;
+}
+
+.dark .document-modal input,
+.dark .document-modal select,
+.dark .document-modal textarea {
+  border-color: #334155;
+  background-color: #020617;
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+
+.dark .document-modal input::placeholder,
+.dark .document-modal textarea::placeholder {
+  color: #64748b;
+}
+
+.dark .document-modal option,
+.dark .document-modal select option {
+  background-color: #020617;
+  color: #f1f5f9;
+}
+
+.dark .document-modal input:disabled,
+.dark .document-modal select:disabled,
+.dark .document-modal textarea:disabled,
+.dark .document-modal input[readonly],
+.dark .document-modal select[readonly],
+.dark .document-modal textarea[readonly],
+.dark .document-modal .document-modal-readonly {
+  border-color: #334155;
+  background-color: #1e293b;
+  color: #cbd5e1;
+  -webkit-text-fill-color: #cbd5e1;
+}
+
 /* Compensa el header fijo (h-20) al navegar por anclas en la landing */
 section[id] {
   scroll-margin-top: 5rem;

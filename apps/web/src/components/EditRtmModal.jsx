@@ -127,7 +127,7 @@ export default function EditRtmModal({ isOpen, onClose, rtm }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
       <div className="document-modal max-h-[calc(100vh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100vh-2rem)]">
-        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
+        <div className="document-modal-header flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
           <h2 className="text-xl font-bold text-syntix-navy flex items-center gap-2">
             <Wrench className="w-5 h-5" />
             Editar RTM
