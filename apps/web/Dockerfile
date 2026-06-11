@@ -21,7 +21,8 @@ COPY --from=build /app/dist/apps/web /usr/share/nginx/html
 
 ENV BACKEND_URL=http://backend:5000
 
-RUN chown -R nginx:nginx /etc/nginx/conf.d /usr/share/nginx/html /var/cache/nginx /var/run
+RUN chown -R nginx:nginx /etc/nginx/conf.d /var/cache/nginx /var/run \
+    && sed -i -e '/^user[[:space:]]/d' -e 's#^pid[[:space:]].*;#pid /tmp/nginx.pid;#' /etc/nginx/nginx.conf
 
 EXPOSE 3000
 

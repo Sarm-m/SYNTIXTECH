@@ -127,13 +127,18 @@ jobs:
         run: curl --fail --retry 12 --retry-delay 5 --retry-all-errors http://localhost:5000/api/health/db
 
       - name: Validar frontend
-        run: curl --fail --retry 12 --retry-delay 5 --retry-all-errors http://localhost:3000/
+        run: curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors http://localhost:3000/ > /dev/null
 
       - name: Validar proxy API del frontend
-        run: curl --fail --retry 12 --retry-delay 5 --retry-all-errors http://localhost:3000/api/health/db
+        run: curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors http://localhost:3000/api/health/db > /dev/null
 
       - name: Mostrar servicios activos
+        if: always()
         run: docker compose ps
+
+      - name: Mostrar logs si falla la validacion
+        if: failure()
+        run: docker compose logs --no-color --tail=200 mongodb backend frontend
 
       - name: Limpiar stack Docker Compose
         if: always()
@@ -261,7 +266,12 @@ jobs:
         run: curl --fail --retry 12 --retry-delay 5 --retry-all-errors http://localhost:3000/api/health/db
 
       - name: Evidencia de servicios desplegados
+        if: always()
         run: docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+
+      - name: Mostrar logs si falla el despliegue
+        if: failure()
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml logs --no-color --tail=200 mongodb backend frontend
 
       - name: Limpiar despliegue
         if: always()

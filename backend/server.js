@@ -1206,7 +1206,7 @@ app.post('/api/auth/reenviar-codigo', async (req, res) => {
         // Envío por correo electrónico.
         await enviarCodigoVerificacion(emailNormalizado, usuario.nombre || usuario.empresa, codigo);
       }
-    } catch (envioErr) {
+    } catch {
       console.error('[AUTH] No fue posible enviar el codigo de verificacion.');
       return res.status(500).json({
         message: 'No fue posible enviar el codigo de verificacion.',
@@ -1495,7 +1495,7 @@ app.post('/api/auth/recuperar-cuenta', async (req, res) => {
             destinationHint: destinoEnmascarado,
           },
         });
-      } catch (smsErr) {
+      } catch {
         console.error('[AUTH] No fue posible enviar el SMS de recuperacion.');
         return res.status(500).json({
           message: 'No fue posible enviar el codigo de recuperacion por SMS.',
@@ -1506,7 +1506,7 @@ app.post('/api/auth/recuperar-cuenta', async (req, res) => {
     try {
       // Canal preferido: correo.
       await enviarCodigoRecuperacion(emailRegistrado, usuario.nombre || usuario.empresa, codigo);
-    } catch (emailErr) {
+    } catch {
       console.error('[AUTH] No fue posible enviar el correo de recuperacion.');
 
       // Si correo falla, se intenta SMS con el número normalizado del usuario.
@@ -1522,7 +1522,7 @@ app.post('/api/auth/recuperar-cuenta', async (req, res) => {
         await enviarCodigoRecuperacionSms(smsDestination, usuario.nombre || usuario.empresa, codigo);
         canalEntrega = 'sms';
         destinoEnmascarado = maskPhone(smsDestination);
-      } catch (smsErr) {
+      } catch {
         console.error('[AUTH] No fue posible enviar el SMS de recuperacion de respaldo.');
         return res.status(500).json({
           message: 'No fue posible enviar el codigo de recuperacion por correo ni por SMS.',
@@ -1791,7 +1791,7 @@ app.post('/api/auth/email-change/request', requireAuth, async (req, res) => {
         usuario.nombre || usuario.empresa,
         maskEmail(newEmail)
       );
-    } catch (envioErr) {
+    } catch {
       await EmailChangeOTP.findOneAndDelete({ userId: usuario._id });
       console.error('[AUTH] No fue posible enviar el codigo de cambio de correo.');
       return res.status(500).json({
