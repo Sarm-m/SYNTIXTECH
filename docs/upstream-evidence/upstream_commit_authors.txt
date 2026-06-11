@@ -1,0 +1,17 @@
+   183	Sarm-m
+   146	samuelfl680
+   109	solonlosada2006
+   102	Sarm
+    71	juansebastianvd
+    30	juserora
+    24	juanvargax
+    21	Juan Sebastian Vargas Dicelys
+    21	Juserora
+    12	Samuel felipe
+    11	Aulas Ingenieria
+     6	TuNombre
+     6	copilot-swe-agent[bot]
+     2	Juan Pablo Arias Buitrago
+     2	unknown
+     1	Juan Sebastian
+     1	Samuel Freile
