@@ -47,15 +47,15 @@ const heroBenefits = [
 ];
 
 const documents = [
-  { icon: Truck, title: 'SOAT', status: 'Vigente', tone: 'success', date: 'Vence el 05/06/2024', entity: 'DCV784 · Chevrolet NQR' },
-  { icon: FileText, title: 'RTM', status: 'Por vencer', tone: 'warning', date: 'Vence el 12/05/2024', entity: 'Furgón Hino 300' },
-  { icon: UserRound, title: 'Licencia', status: 'Vigente', tone: 'success', date: 'Vence el 22/08/2024', entity: 'Mariana Torres · Conductor' },
+  { icon: Truck, title: 'SOAT', status: 'Vigente', tone: 'success', date: 'Vence en 42 días', entity: 'DCV784 · Chevrolet NQR' },
+  { icon: FileText, title: 'RTM', status: 'Por vencer', tone: 'warning', date: 'Vence en 7 días', entity: 'Furgón Hino 300' },
+  { icon: UserRound, title: 'Licencia', status: 'Vigente', tone: 'success', date: 'Vence en 18 días', entity: 'Mariana Torres · Conductor' },
 ];
 
 const recentActivity = [
-  { icon: FileText, title: 'Documento actualizado', detail: 'SOAT · DCV784', time: 'Hoy, 09:41', dot: 'bg-emerald-400' },
-  { icon: Bell, title: 'Alerta enviada', detail: 'RTM · Furgón Hino 300', time: 'Hoy, 08:15', dot: 'bg-amber-400' },
-  { icon: CheckCircle2, title: 'Revisión completada', detail: 'Licencia · Mariana Torres', time: 'Ayer, 17:32', dot: 'bg-blue-400' },
+  { icon: FileText, title: 'Documento actualizado', detail: 'SOAT · DCV784', time: 'Actualizado hoy', dot: 'bg-emerald-400' },
+  { icon: Bell, title: 'Alerta preventiva enviada', detail: 'RTM · Furgón Hino 300', time: 'Hace 1 hora', dot: 'bg-amber-400' },
+  { icon: CheckCircle2, title: 'Revisión completada', detail: 'Licencia · Mariana Torres', time: 'Hace 2 horas', dot: 'bg-blue-400' },
 ];
 
 const monthlyCompliance = [
@@ -111,24 +111,24 @@ export default function HomePage() {
                 Gestión documental para flotas
               </div>
 
-              <h1 className="mt-8 max-w-[700px] text-[2.65rem] font-black uppercase leading-[1.08] tracking-[-0.035em] text-slate-50 sm:text-[3.35rem] lg:text-[4rem] xl:text-[3.65rem] 2xl:text-[4.15rem]">
-                Controla los documentos de tu flota antes de que venzan<span className="text-blue-500">.</span>
+              <h1 className="mt-8 max-w-[760px] text-[2.5rem] font-black leading-[1.08] tracking-[-0.035em] text-slate-50 sm:text-[3.15rem] lg:text-[3.5rem] xl:text-[2.75rem] 2xl:text-[3.35rem]">
+                Gestiona el cumplimiento documental de tu flota desde una sola plataforma<span className="text-blue-500">.</span>
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8 xl:max-w-xl">
-                DriveControl centraliza vehículos, conductores, SOAT, RTM, vencimientos y alertas en una sola plataforma para que tu operación no dependa de Excel, chats o recordatorios manuales.
+                DriveControl centraliza vehículos, conductores, SOAT, RTM, licencias, vencimientos y alertas preventivas para que tu operación actúe antes de que un documento crítico afecte la continuidad del servicio.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Link to="/demo/dashboard" className="landing-primary-cta">
+                  Ver demo interactiva <PlayCircle className="h-4 w-4" />
+                </Link>
                 <button
                   type="button"
-                  onClick={isAuthenticated ? () => navigate('/dashboard') : openLogin}
-                  className="landing-primary-cta"
+                  onClick={isAuthenticated ? () => navigate('/dashboard') : openRegister}
+                  className="landing-secondary-cta"
                 >
-                  {isAuthenticated ? 'Ir al dashboard' : 'Iniciar sesión'} <ArrowRight className="h-4 w-4" />
+                  {isAuthenticated ? 'Ir al dashboard' : 'Registrarse'} <ArrowRight className="h-4 w-4" />
                 </button>
-                <Link to="/demo/dashboard" className="landing-secondary-cta">
-                  Ver demo <PlayCircle className="h-4 w-4" />
-                </Link>
                 <button type="button" onClick={goToProduct} className="landing-link-cta">
                   Conocer funciones <ChevronRight className="h-4 w-4" />
                 </button>
@@ -162,7 +162,20 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="funciones" className="py-20 sm:py-24">
+        <section className="py-20 sm:py-24">
+          <SectionIntro
+            eyebrow="Cómo funciona"
+            title="Del registro a la acción preventiva en tres pasos"
+            description="DriveControl organiza el seguimiento documental para que el equipo pueda actuar con contexto y a tiempo."
+          />
+          <div className="mx-auto mt-12 grid max-w-7xl gap-5 px-4 sm:px-6 md:grid-cols-3 lg:px-8">
+            <ProblemCard number="01" title="Registra la flota" description="Registra vehículos, conductores y documentos clave." />
+            <ProblemCard number="02" title="Controla vencimientos" description="DriveControl organiza vencimientos y estados en una vista centralizada." />
+            <ProblemCard number="03" title="Actúa con alertas" description="El equipo prioriza alertas y toma acciones antes de que el riesgo sea crítico." />
+          </div>
+        </section>
+
+        <section id="funciones" className="bg-slate-50/80 py-20 sm:py-24">
           <SectionIntro eyebrow="La solución" title="Una vista confiable para gestionar el cumplimiento de la flota" description="DriveControl convierte datos documentales en acciones claras para que el equipo pueda anticiparse." />
           <div className="mx-auto mt-12 grid max-w-7xl gap-5 px-4 sm:px-6 md:grid-cols-2 lg:grid-cols-3 lg:px-8">
             {modules.map((item) => <ModuleCard key={item.title} {...item} />)}
@@ -200,8 +213,8 @@ export default function HomePage() {
             <h2 className="mt-5 text-3xl font-black tracking-tight text-syntix-navy sm:text-4xl">Entiende el valor de DriveControl en minutos</h2>
             <p className="mt-4 text-slate-600">Recorre una flota ficticia con vehículos, conductores, vencimientos, alertas y reportes, sin registrarte.</p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Link to="/demo/dashboard" className="btn-primary min-h-12 px-6 font-black">Ver demo <ArrowRight className="h-4 w-4" /></Link>
-              <button type="button" onClick={openRegister} className="btn-secondary min-h-12 px-6 font-black">Crear cuenta</button>
+              <Link to="/demo/dashboard" className="btn-primary min-h-12 px-6 font-black">Ver demo interactiva <ArrowRight className="h-4 w-4" /></Link>
+              <button type="button" onClick={openRegister} className="btn-secondary min-h-12 px-6 font-black">Registrarse</button>
             </div>
           </div>
         </section>
@@ -314,12 +327,11 @@ function DashboardPreview() {
 
         <div className="mt-3 flex flex-col gap-3 rounded-xl border border-slate-700/50 bg-slate-900/35 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2.5 text-[9px] text-slate-400 sm:text-[10px]">
-            <ShieldCheck className="h-4 w-4 shrink-0 text-blue-300" /> Tus datos están protegidos con cifrado de nivel empresarial.
+            <ShieldCheck className="h-4 w-4 shrink-0 text-blue-300" /> Datos separados por cuenta y autenticación protegida.
           </div>
-          <div className="flex items-center gap-2 text-[9px] text-slate-500">
-            <span>Certificaciones</span>
-            <span className="rounded-md border border-slate-700/60 px-2 py-1 text-slate-400">ISO 27001</span>
-            <span className="rounded-md border border-slate-700/60 px-2 py-1 text-slate-400">SOC 2</span>
+          <div className="flex items-center gap-2 text-[9px] text-slate-400">
+            <span className="rounded-md border border-slate-700/60 px-2 py-1">Historial auditable</span>
+            <span className="rounded-md border border-slate-700/60 px-2 py-1">Demo con datos ficticios</span>
           </div>
         </div>
       </div>

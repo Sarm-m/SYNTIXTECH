@@ -179,7 +179,7 @@ export default function ReportesPage() {
   return (
     <div className="space-y-6">
       <Helmet>
-        <title>Reportes | SYNTIX Drive Control</title>
+        <title>Reportes | DriveControl</title>
       </Helmet>
 
       <div data-onboarding="reports-header" className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

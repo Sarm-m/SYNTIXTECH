@@ -21,7 +21,7 @@ const ONBOARDING_STEPS = [
   createStep(
     'tour-introduction',
     'Introduccion al recorrido',
-    'Este recorrido te acompaña pantalla por pantalla. La idea es que veas cómo se conecta cada módulo dentro de la operación diaria de Drive Control.',
+    'Este recorrido te acompaña pantalla por pantalla. La idea es que veas cómo se conecta cada módulo dentro de la operación diaria de DriveControl.',
     '/dashboard',
     null,
     ['Vas a recorrer el flujo completo del backoffice.', 'Cada parada resalta una parte real de la interfaz.', 'Puedes avanzar, volver o salir cuando quieras.']
@@ -60,6 +60,7 @@ const ONBOARDING_STEPS = [
   ),
   createStep('dashboard-action-vehicles', 'Acceso directo a Vehículos', 'Este botón te lleva al módulo donde administras la flota registrada.', '/dashboard', 'dashboard-action-vehicles'),
   createStep('dashboard-action-add-vehicle', 'Alta rápida de vehículo', 'Este acceso abre el formulario para registrar un vehículo nuevo desde el propio dashboard.', '/dashboard', 'dashboard-action-add-vehicle'),
+  createStep('dashboard-action-add-conductor', 'Alta rápida de conductor', 'Este acceso abre el formulario para registrar un conductor desde el dashboard.', '/dashboard', 'dashboard-action-add-conductor'),
   createStep('dashboard-action-add-soat', 'Alta rápida de SOAT', 'Desde aquí puedes cargar directamente una póliza SOAT sin navegar a otra pantalla.', '/dashboard', 'dashboard-action-add-soat'),
   createStep('dashboard-action-add-rtm', 'Alta rápida de RTM', 'Este acceso te ahorra pasos cuando necesitas registrar una revisión técnico-mecánica.', '/dashboard', 'dashboard-action-add-rtm'),
   createStep('dashboard-stat-veh-culos', 'Indicador de vehículos', 'Esta tarjeta muestra cuántos vehículos tienes registrados actualmente.', '/dashboard', 'dashboard-stat-veh-culos'),

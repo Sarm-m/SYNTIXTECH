@@ -43,6 +43,7 @@ export default function DashboardView({
 }) {
   const { isDarkMode } = useTheme();
   const to = (path) => `${basePath}${path}`;
+  const recommendation = useMemo(() => getRecommendedAction(alerts), [alerts]);
 
   const metrics = useMemo(() => [
     { label: 'Vehículos registrados', value: vehiculos.length, hint: 'Unidades bajo control', icon: Car, tone: 'navy' },
@@ -65,27 +66,32 @@ export default function DashboardView({
   );
 
   const actions = (
-    <>
-      <button type="button" onClick={onAddVehicle} className="btn-primary">
+    <div data-onboarding="dashboard-header-actions" className="flex flex-wrap gap-2 sm:justify-end">
+      <button type="button" onClick={onAddVehicle} data-onboarding="dashboard-action-add-vehicle" className="btn-primary">
         <Plus className="h-4 w-4" /> Agregar vehículo
       </button>
-      <button type="button" onClick={onAddConductor} className="btn-secondary">
+      <button type="button" onClick={onAddConductor} data-onboarding="dashboard-action-add-conductor" className="btn-secondary">
         <Users className="h-4 w-4" /> Agregar conductor
       </button>
-      <button type="button" onClick={onAddSoat} className="btn-secondary">
-        <FilePlus2 className="h-4 w-4" /> Registrar documento
+      <button type="button" onClick={onAddSoat} data-onboarding="dashboard-action-add-soat" className="btn-secondary">
+        <FilePlus2 className="h-4 w-4" /> Registrar SOAT
       </button>
-    </>
+      <button type="button" onClick={onAddRtm} data-onboarding="dashboard-action-add-rtm" className="btn-secondary">
+        <Wrench className="h-4 w-4" /> Registrar RTM
+      </button>
+    </div>
   );
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow={readOnly ? 'Vista demostrativa' : 'Centro de control'}
-        title="Estado general de la flota"
-        description="Prioriza vencimientos, documentos faltantes y acciones operativas desde una sola vista."
-        actions={actions}
-      />
+      <div data-onboarding="dashboard-summary">
+        <PageHeader
+          eyebrow={readOnly ? 'Vista demostrativa' : 'Centro de control'}
+          title="Estado general de la flota"
+          description="Prioriza vencimientos, documentos faltantes y acciones operativas desde una sola vista."
+          actions={actions}
+        />
+      </div>
 
       {error ? (
         <ErrorState message={error} onRetry={onRetry} />
@@ -93,6 +99,8 @@ export default function DashboardView({
         <LoadingState />
       ) : (
         <>
+          <RecommendedActionCard recommendation={recommendation} to={to} isDarkMode={isDarkMode} />
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
             {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
           </div>
@@ -166,6 +174,85 @@ export default function DashboardView({
         </>
       )}
     </div>
+  );
+}
+
+export function getRecommendedAction(alerts = []) {
+  const sortByUrgency = (a, b) => {
+    const aDays = Number.isFinite(a?.diasRestantes) ? a.diasRestantes : Number.POSITIVE_INFINITY;
+    const bDays = Number.isFinite(b?.diasRestantes) ? b.diasRestantes : Number.POSITIVE_INFINITY;
+    return aDays - bDays;
+  };
+  const critical = alerts.filter((alert) => alert.prioridad === 'rojo').sort(sortByUrgency);
+
+  if (critical.length > 0) {
+    return {
+      tone: 'critical',
+      title: 'Hay alertas críticas que requieren revisión inmediata.',
+      description: 'Prioriza los documentos vencidos o con mayor riesgo operativo.',
+      alert: critical[0],
+    };
+  }
+
+  const preventive = alerts.filter((alert) => alert.prioridad === 'amarillo').sort(sortByUrgency);
+  if (preventive.length > 0) {
+    return {
+      tone: 'preventive',
+      title: 'El próximo vencimiento requiere seguimiento preventivo.',
+      description: 'Revisa el documento más cercano antes de que se convierta en alerta crítica.',
+      alert: preventive[0],
+    };
+  }
+
+  return {
+    tone: 'positive',
+    title: 'La flota no tiene alertas activas en este momento.',
+    description: 'Mantén actualizados los documentos para conservar este estado.',
+    alert: null,
+  };
+}
+
+function RecommendedActionCard({ recommendation, to, isDarkMode }) {
+  const isCritical = recommendation.tone === 'critical';
+  const isPreventive = recommendation.tone === 'preventive';
+  const Icon = isCritical ? AlertTriangle : isPreventive ? BellRing : ShieldCheck;
+  const accentClass = isCritical
+    ? 'border-l-red-500'
+    : isPreventive
+      ? 'border-l-amber-500'
+      : 'border-l-emerald-500';
+  const iconClass = isCritical
+    ? 'bg-red-500/10 text-red-500'
+    : isPreventive
+      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+
+  return (
+    <SurfaceCard className={`border-l-4 p-5 ${accentClass}`}>
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-start gap-4">
+          <div className={`rounded-xl p-3 ${iconClass}`}><Icon className="h-5 w-5" /></div>
+          <div className="min-w-0">
+            <p className="eyebrow">Acción recomendada</p>
+            <h2 className={`mt-2 text-lg font-black ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+              {recommendation.title}
+            </h2>
+            <p className={`mt-1 text-sm leading-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              {recommendation.description}
+            </p>
+            {recommendation.alert && (
+              <p className={`mt-2 text-xs font-semibold ${isCritical ? 'text-red-500' : 'text-amber-600 dark:text-amber-400'}`}>
+                {recommendation.alert.mensaje} · {recommendation.alert.reason || recommendation.alert.entidad}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+          <Link to={to('/alertas')} className="btn-primary">Ver alertas <ArrowRight className="h-4 w-4" /></Link>
+          <Link to={to('/documentos')} className="btn-secondary">Revisar documentos</Link>
+        </div>
+      </div>
+    </SurfaceCard>
   );
 }
 
@@ -247,7 +334,18 @@ DashboardView.propTypes = {
   onAddVehicle: PropTypes.func.isRequired,
   onAddConductor: PropTypes.func.isRequired,
   onAddSoat: PropTypes.func.isRequired,
-  onAddRtm: PropTypes.func,
+  onAddRtm: PropTypes.func.isRequired,
+};
+
+RecommendedActionCard.propTypes = {
+  recommendation: PropTypes.shape({
+    tone: PropTypes.oneOf(['critical', 'preventive', 'positive']).isRequired,
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    alert: PropTypes.object,
+  }).isRequired,
+  to: PropTypes.func.isRequired,
+  isDarkMode: PropTypes.bool.isRequired,
 };
 
 SectionHeading.propTypes = {

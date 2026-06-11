@@ -109,7 +109,7 @@ export default function HistorialValidacionesPage() {
   return (
     <div className="space-y-6">
       <Helmet>
-        <title>Historial de Validaciones | SYNTIX Drive Control</title>
+        <title>Historial de Validaciones | DriveControl</title>
       </Helmet>
 
       <div data-onboarding="runt-history-header">

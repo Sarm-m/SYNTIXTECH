@@ -78,7 +78,7 @@ export default function ValidacionRUNTPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <Helmet>
-        <title>Validación RUNT | SYNTIX Drive Control</title>
+        <title>Validación RUNT | DriveControl</title>
       </Helmet>
 
       <div data-onboarding="runt-header" className="text-center mb-8">

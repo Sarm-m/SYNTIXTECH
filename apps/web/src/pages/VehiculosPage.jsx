@@ -99,7 +99,7 @@ export default function VehiculosPage() {
   return (
     <div className="space-y-6">
       <Helmet>
-        <title>Vehiculos | SYNTIX Drive Control</title>
+        <title>Vehiculos | DriveControl</title>
       </Helmet>
 
       <div

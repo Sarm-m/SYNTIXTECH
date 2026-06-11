@@ -166,7 +166,7 @@ export default function OnboardingTour() {
           <Sparkles className="h-6 w-6" />
         </div>
 
-        <h2 className="mt-5 text-2xl font-bold text-syntix-navy">Bienvenido a Drive Control</h2>
+        <h2 className="mt-5 text-2xl font-bold text-syntix-navy">Bienvenido a DriveControl</h2>
         <p className="mt-3 text-sm leading-6 text-gray-600">
           Detectamos que tu cuenta acaba de completar el ingreso inicial. Si quieres, te guiamos por el
           dashboard, las alertas, reportes, validacion RUNT, configuracion y el flujo para agregar tu
@@ -229,7 +229,7 @@ export default function OnboardingTour() {
 
           <h2 className="mt-5 text-2xl font-bold text-syntix-navy">Todo listo para comenzar</h2>
           <p className="mt-3 text-sm leading-6 text-gray-600">
-            Ya recorriste los puntos principales de Drive Control. Desde este momento puedes usar el
+            Ya recorriste los puntos principales de DriveControl. Desde este momento puedes usar el
             dashboard como centro de trabajo y moverte con mas seguridad por vehiculos, documentos,
             alertas, RUNT, reportes y configuracion.
           </p>

@@ -260,7 +260,7 @@ export default function UserProfilePage() {
   return (
     <div className="space-y-6">
       <Helmet>
-        <title>Perfil | SYNTIX Drive Control</title>
+        <title>Perfil | DriveControl</title>
       </Helmet>
 
       <section className={`overflow-hidden rounded-3xl border shadow-sm ${cardClass}`}>
